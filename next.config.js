@@ -7,7 +7,6 @@ const nextConfig = {
       'm.media-amazon.com',
       'mobileimages.lowes.com'
     ],
-    // Disable image optimization
     unoptimized: true,
   },
   typescript: {
@@ -16,10 +15,9 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Updated for Next.js 15
   experimental: {
-    // Remove any experimental features that might cause issues
-    outputFileTracingRoot: undefined,
-    outputFileTracingExcludes: undefined,
+    serverComponentsExternalPackages: ['@prisma/client'],
   }
 };
 
