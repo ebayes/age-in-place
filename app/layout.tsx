@@ -7,7 +7,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider afterSignInUrl='/app' afterSignUpUrl='/app' >
     <html lang="en" suppressHydrationWarning>
       <body className="bg-background text-foreground">
         {children}

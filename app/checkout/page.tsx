@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { useEffect } from 'react'
 import { useClerk } from '@clerk/nextjs'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { retrieveStripeCheckoutSession } from '@/lib/actions'
 import { MoveLeft } from 'lucide-react'
 
@@ -12,6 +12,7 @@ export default function Checkout() {
   const { session } = useClerk()
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('sessionId')
+  const router = useRouter()
 
   useEffect(() => {
     if (!sessionId || !session) return
@@ -19,13 +20,14 @@ export default function Checkout() {
     retrieveStripeCheckoutSession(sessionId).then(({ success, error }) => {
       if (success) {
         session?.reload()
+        router.push('/app')
       }
 
       if (error) {
         toast.error('Failed to retrieve checkout session!')
       }
     })
-  }, [sessionId, session])
+  }, [sessionId, session, router])
 
   return (
     <section className='py-24'>
@@ -41,11 +43,11 @@ export default function Checkout() {
         </p>
 
         <Link
-          href='/'
+          href='/app'
           className='mt-8 flex w-fit gap-2 rounded-md bg-emerald-500 px-3 py-1 text-white no-underline hover:bg-emerald-600 hover:no-underline'
         >
           <MoveLeft className='h-6 w-6' />
-          <span>Go back home</span>
+          <span>Go to app</span>
         </Link>
       </div>
     </section>
