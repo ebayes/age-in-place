@@ -15,15 +15,16 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   experimental: {
-    outputFileTracingRoot: process.env.VERCEL ? '/vercel/path0' : undefined,
+    outputFileTracingRoot: process.env.VERCEL ? undefined : process.cwd(),
     outputFileTracingExcludes: {
       '*': [
-        'node_modules/@swc/core-linux-x64-gnu',
-        'node_modules/@swc/core-linux-x64-musl',
-        'node_modules/@esbuild/linux-x64',
+        'node_modules/@swc/core-*/**/*',
+        'node_modules/@esbuild/**/*',
+        '.next/**/*',
+        '**/*.{json,md,txt,log,lock}'
       ],
     },
-  },
+  }
 };
 
 module.exports = nextConfig;

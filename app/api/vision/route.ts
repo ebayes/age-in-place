@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { clerkClient, currentUser } from '@clerk/nextjs'
 import { z } from 'zod'
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 
 const ModificationRecommendation = z.object({
     location: z.string(),

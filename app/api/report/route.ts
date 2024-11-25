@@ -4,7 +4,7 @@ import { clerkClient, currentUser } from '@clerk/nextjs'
 import { z } from 'zod'
 import { OnboardingAnswers } from '@/types/report'
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 
 // Define the exact sections we want
 const REPORT_SECTIONS = [
