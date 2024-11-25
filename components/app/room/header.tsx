@@ -3,6 +3,7 @@
    import { Delete } from '@/components/icons';
    import { formatRoomName } from '@/utils/utils';
    import { HeaderProps } from '@/types/types';
+   import { SignedIn } from '@clerk/nextjs';
 
    export const Header: React.FC<HeaderProps> = ({
      currentRoomName,
@@ -22,9 +23,12 @@
              {loading ? 'Analyzing...' : 'Analyze Image'}
            </Button>
            */}
-           <Button variant="destructive" size="square" onClick={onDeleteClick}>
-             <Delete size="sm" />
-           </Button>
+           <SignedIn>
+             <Button variant="secondary" size="sm" onClick={onDeleteClick}>
+               <Delete size="xs" className="text-red-500 mr-1" />
+               Delete room
+             </Button>
+           </SignedIn>
          </div>
        </div>
      );

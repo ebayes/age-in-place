@@ -18,21 +18,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
+import Image from 'next/image';
+import { useAssessmentsContext } from '@/contexts/assessments';
+import { useSupabaseClient } from '@/hooks/useSupabaseClient';
+import { Room } from '@/types/types';
+import { formatRoomName, getIcon } from '@/utils/utils';
+import { toast } from 'sonner';
 import {
   Select,
   SelectTrigger,
   SelectContent,
   SelectItem,
-  SelectInput,
-  SelectEmpty,
-} from '@/components/ui/combo-box';
-import { Progress } from '@/components/ui/progress';
-import Image from 'next/image';
-import { useAssessmentsContext } from '@/contexts/assessments';
-import { toast } from 'sonner';
-import { useSupabaseClient } from '@/hooks/useSupabaseClient';
-import { Room } from '@/types/types';
-import { formatRoomName, getIcon } from '@/utils/utils';
+  SelectGroup,
+  SelectValue,
+} from '@/components/ui/select';
 
 function NewRoom() {
   const router = useRouter();
@@ -50,7 +50,8 @@ function NewRoom() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const supabaseClient = useSupabaseClient();
   const [productIds, setProductIds] = useState<string[]>([]);
- 
+  const [openPopover, setOpenPopover] = useState(false);
+
   useEffect(() => {
     if (!supabaseClient || !selectedRoomName) return;
   
@@ -63,7 +64,7 @@ function NewRoom() {
           .single(); 
   
         if (error) {
-          console.error('Error fetching product_ids:', error);
+          //  console.error('Error fetching product_ids:', error);
           return;
         }
   
@@ -73,7 +74,7 @@ function NewRoom() {
           setProductIds([]);
         }
       } catch (error) {
-        console.error('Unexpected error fetching product_ids:', error);
+        //  console.error('Unexpected error fetching product_ids:', error);
       }
     };
   
@@ -85,6 +86,11 @@ function NewRoom() {
   
     async function loadAvailableRooms() {
       try {
+        if (!supabaseClient) {
+          //  console.error('Supabase client not initialized');
+          return;
+        }
+  
         const { data, error } = await supabaseClient
           .from('rooms')
           .select('id, room_name');
@@ -95,7 +101,7 @@ function NewRoom() {
           data?.map((room) => ({ id: room.id, name: room.room_name })) || []
         );
       } catch (error) {
-        console.error('Error loading available rooms:', error);
+        //  console.error('Error loading available rooms:', error);
       }
     }
   
@@ -110,83 +116,93 @@ function NewRoom() {
     }
   };
 
-  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!supabaseClient) {
-      alert('Supabase client is not initialized.');
-      return;
-    }
-  
-    try {
-      setUploading(true);
-      setUploadProgress(0);
-
-      if (!event.target.files || event.target.files.length === 0) {
-        throw new Error('You must select images to upload.');
+  const handleUpload = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      if (!supabaseClient) {
+        alert('Supabase client is not initialized.');
+        return;
       }
-
-      const files = Array.from(event.target.files);
-      setUploadedFiles((prev) => [...prev, ...files]);
-
-      const previews = files.map((file) => URL.createObjectURL(file));
-      setPreviewUrls(previews);
-
-      const formData = new FormData();
-      files.forEach((file) => {
-        formData.append('files', file);
-      });
-
-      const response = await new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-
-        xhr.upload.addEventListener('progress', (event) => {
-          if (event.lengthComputable) {
-            const percentCompleted = Math.round(
-              (event.loaded * 100) / event.total
-            );
-            setUploadProgress(percentCompleted);
-          }
-        });
-
-        xhr.addEventListener('load', () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve(JSON.parse(xhr.response));
-          } else {
-            reject(new Error(`HTTP error! status: ${xhr.status}`));
-          }
-        });
-
-        xhr.addEventListener('error', () => {
-          reject(new Error('Network error'));
-        });
-
-        xhr.open('POST', '/api/upload');
-        xhr.send(formData);
-      });
-
-      const result = response as any;
-
-      if (result.error) {
-        throw result.error;
-      }
-
-      const publicUrls = await Promise.all(
-        result.data.paths.map(async (path: string) => {
-          const { data } = await supabaseClient.storage
-            .from('rooms')
-            .getPublicUrl(path);
-          return data.publicUrl;
-        })
-      );
   
-      setUploadedImagePaths((prev) => [...prev, ...publicUrls]);
-    } catch (error: any) {
-      console.error('Upload error:', error);
-      toast.error(`Failed to upload files: ${error.message}`);
-    } finally {
-      setUploading(false);
-      setUploadProgress(0);
-    }
-  };
+      try {
+        setUploading(true);
+        setUploadProgress(0);
+  
+        if (!event.target.files || event.target.files.length === 0) {
+          throw new Error('You must select images to upload.');
+        }
+  
+        const files = Array.from(event.target.files);
+        setUploadedFiles((prev) => [...prev, ...files]);
+  
+        const previews = files.map((file) => URL.createObjectURL(file));
+        setPreviewUrls(previews);
+  
+        const formData = new FormData();
+        files.forEach((file) => {
+          formData.append('files', file);
+        });
+  
+        const response = await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+  
+          xhr.upload.addEventListener('progress', (event) => {
+            if (event.lengthComputable) {
+              const percentCompleted = Math.round(
+                (event.loaded * 100) / event.total
+              );
+              setUploadProgress(percentCompleted);
+            }
+          });
+  
+          xhr.addEventListener('load', () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve(JSON.parse(xhr.response));
+            } else {
+              reject(new Error(`HTTP error! status: ${xhr.status}`));
+            }
+          });
+  
+          xhr.addEventListener('error', () => {
+            reject(new Error('Network error'));
+          });
+  
+          xhr.open('POST', '/api/upload');
+          xhr.send(formData);
+        });
+  
+        const result = response as any;
+  
+        if (result.error) {
+          throw result.error;
+        }
+  
+        const publicUrls = await Promise.all(
+          result.data.paths.map(async (path: string) => {
+            const { data } = await supabaseClient.storage
+              .from('rooms')
+              .getPublicUrl(path);
+            return data.publicUrl;
+          })
+        );
+  
+        setUploadedImagePaths((prev) => [...prev, ...publicUrls]);
+      } catch (error: any) {
+        //  console.error('Upload error:', error);
+        toast.error(`Failed to upload files: ${error.message}`);
+      } finally {
+        setUploading(false);
+        setUploadProgress(0);
+      }
+    },
+    [
+      supabaseClient,
+      setUploading,
+      setUploadProgress,
+      setUploadedFiles,
+      setPreviewUrls,
+      setUploadedImagePaths,
+    ]
+  );
 
   const removeSelectedImage = (index: number) => {
     setUploadedImagePaths((prev) => prev.filter((_, i) => i !== index));
@@ -277,7 +293,7 @@ function NewRoom() {
         
         if (!visionResponse.ok) {
           const errorText = await visionResponse.text(); 
-          console.error('Vision API error:', visionResponse.status, errorText);
+          //  console.error('Vision API error:', visionResponse.status, errorText);
           throw new Error(`Error from vision API: ${visionResponse.status} ${errorText}`);
         }
 
@@ -326,7 +342,7 @@ function NewRoom() {
       .select();
 
     if (error) {
-      console.error('Supabase insert error:', error);
+      //  console.error('Supabase insert error:', error);
       throw error;
     }
 
@@ -336,7 +352,7 @@ function NewRoom() {
 
     await refreshAssessments();
   } catch (error: any) {
-    console.error('Error creating new room:', error);
+    //  console.error('Error creating new room:', error);
     toast.error(`Failed to create a new room: ${error.message}`);
   } finally {
 
@@ -348,6 +364,14 @@ function NewRoom() {
     setUploading(false);
     setIsDialogOpen(false);
   }
+};
+
+const resetStates = () => {
+  setSelectedRoomName('');
+  setUploadedImagePaths([]);
+  setUploadedFiles([]);
+  setPreviewUrls([]);
+  setUploadProgress(0);
 };
 
   return (
@@ -366,41 +390,46 @@ function NewRoom() {
       </TooltipProvider>
 
       {isSignedIn && (
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create a new room</DialogTitle>
-            </DialogHeader>
-            <DialogDescription>
-              <div className="space-y-4">
-                <Select
-                  value={selectedRoomName}
-                  onValueChange={setSelectedRoomName}
-                >
-                  <SelectTrigger
-                    id="select-room"
-                    className="w-full flex items-center gap-2"
-                    placeholder="Select or type a room type"
-                  />
-                  <SelectContent>
-                    <SelectInput placeholder="Type or select a room type" />
-                    {availableRooms.length > 0 ? (
-                      availableRooms.map((room) => {
-                        const Icon = getIcon(room.name);
-                        return (
-                          <SelectItem key={room.id} value={room.name}>
-                            <Icon size={16} aria-hidden="true" />
-                            <span className="truncate">
-                              {formatRoomName(room.name)}
-                            </span>
-                          </SelectItem>
-                        );
-                      })
-                    ) : (
-                      <SelectEmpty>No rooms available.</SelectEmpty>
-                    )}
-                  </SelectContent>
-                </Select>
+        <Dialog 
+          open={isDialogOpen} 
+          onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) { 
+              resetStates();
+            }
+          }}
+        >
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Create a new room</DialogTitle>
+      </DialogHeader>
+      <DialogDescription>
+        <div className="space-y-4">
+          {/* Replace the nested Popover with a single one */}
+          <Select
+  value={selectedRoomName}
+  onValueChange={(value) => setSelectedRoomName(value)}
+>
+  <SelectTrigger className="w-full">
+    <SelectValue placeholder="Select room type..." />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectGroup>
+      {availableRooms.map((room) => {
+        const Icon = getIcon(room.name);
+        return (
+          <SelectItem key={room.id} value={room.name}>
+            <div className="flex items-center gap-2">
+              <Icon size={16} />
+              {formatRoomName(room.name)}
+            </div>
+          </SelectItem>
+        );
+      })}
+    </SelectGroup>
+  </SelectContent>
+</Select>
+
                 <div>
                   <label
                     htmlFor="dropzone-file"
@@ -410,14 +439,7 @@ function NewRoom() {
                   >
                     {uploading && (
                       <div className="text-center max-w-md">
-                        <Progress value={uploadProgress} />
-                        <p className="text-sm font-semibold">
-                          Uploading Pictures
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          Do not refresh or perform any other action while the
-                          pictures are being uploaded
-                        </p>
+                        
                         {previewUrls.length > 0 && (
                           <div className="grid grid-cols-2 gap-2 mt-2">
                             {previewUrls.map((url, index) => (
@@ -432,6 +454,14 @@ function NewRoom() {
                             ))}
                           </div>
                         )}
+                        <Progress value={uploadProgress} />
+                        <p className="text-sm font-semibold">
+                          Uploading Pictures
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          Do not refresh or perform any other action while the
+                          pictures are being uploaded
+                        </p>
                       </div>
                     )}
 
@@ -449,29 +479,40 @@ function NewRoom() {
                       </div>
                     )}
 
-                    {uploadedImagePaths.length > 0 && !uploading && (
-                      <div className="grid grid-cols-2 gap-2 mt-4">
-                        {uploadedImagePaths.map((path, index) => (
-                          <div key={path} className="relative">
-                            <Image
-                              width={100}
-                              height={100}
-                              src={path}
-                              className="w-full object-contain max-h-16"
-                              alt={`uploaded image ${index + 1}`}
-                            />
-                            <Button
-                              onClick={() => removeSelectedImage(index)}
-                              type="button"
-                              variant="secondary"
-                              className="absolute top-0 right-0 p-1"
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+{uploadedImagePaths.length > 0 && !uploading && (
+  <div 
+    className="grid grid-cols-2 gap-2 mt-4"
+    onClick={(e) => e.stopPropagation()} // Add this wrapper div with click prevention
+  >
+    {uploadedImagePaths.map((path, index) => (
+      <div 
+        key={path} 
+        className="relative"
+        onClick={(e) => e.preventDefault()} // Add this as well
+      >
+        <Image
+          width={100}
+          height={100}
+          src={path}
+          className="w-full object-contain max-h-16"
+          alt={`uploaded image ${index + 1}`}
+        />
+        <Button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            removeSelectedImage(index);
+          }}
+          type="button"
+          variant="secondary"
+          className="absolute top-0 right-0 p-1"
+        >
+          Remove
+        </Button>
+      </div>
+    ))}
+  </div>
+)}
                   </label>
 
                   <input

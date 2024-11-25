@@ -27,7 +27,7 @@ export default async function Page() {
     .order('id');
 
   if (error) {
-    console.error('Error fetching rooms:', error);
+    //  console.error('Error fetching rooms:', error);
     // Handle error appropriately; for now, redirect to demo room
     redirect('/app/0');
     return;

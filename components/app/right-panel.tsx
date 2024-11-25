@@ -4,6 +4,7 @@ import { Link } from '../icons';
 import Image from 'next/image';
 import { Product, RightPanelProps } from '@/types/types';
 import { useSupabaseClient } from '@/hooks/useSupabaseClient';
+import { dummyProducts } from '@/data/dummy';
 
 export function RightPanel({
   allProductIds,
@@ -11,10 +12,27 @@ export function RightPanel({
   hoveredProductId,
   setHoveredProductId,
   productCounts,
+  demoMode = false,
 }: RightPanelProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const supabaseClient = useSupabaseClient();
+  
   useEffect(() => {
+    if (demoMode) {
+      // Convert dummy products object to array format matching your Product type
+      const dummyProductsArray = Object.entries(dummyProducts).map(([id, product]) => ({
+        product_id: id,
+        product_name: product.name,
+        description: product.description,
+        price: product.price,
+        thumbnail: product.image_url,
+        url: '#', // or some demo URL
+        category: product.category,
+        cost_rating: 0,
+      }));
+      setProducts(dummyProductsArray as Product[]);
+      return;
+    }
     const fetchProducts = async () => {
       if (!supabaseClient || allProductIds.length === 0) {
         setProducts([]);
@@ -28,18 +46,18 @@ export function RightPanel({
           .in('product_id', allProductIds);
 
         if (error) {
-          console.error('Error fetching products:', error);
+          //  console.error('Error fetching products:', error);
           return;
         }
 
         setProducts(productsData || []);
       } catch (error) {
-        console.error('Error fetching products:', error);
+        //  console.error('Error fetching products:', error);
       }
     };
 
     fetchProducts();
-  }, [allProductIds, supabaseClient]);
+  }, [allProductIds, supabaseClient, demoMode]);
 
   return (
     <div className="w-[400px] flex-shrink-0 rounded-[6px] flex flex-col bg-white border">

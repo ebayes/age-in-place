@@ -56,7 +56,7 @@ export const useAssessments = (
           setSelectedImageIndex(null);
         }
       } catch (error) {
-        console.error('Error loading assessment:', error);
+        //  console.error('Error loading assessment:', error);
         setAssessments([]);
         setAllImages([]);
         setSelectedImageIndex(null);

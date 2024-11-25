@@ -7,7 +7,7 @@ import { manageSubscription } from '@/lib/actions'
 import { Loader2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-
+import { UserPublicMetadata, CreditsType } from '@/types/types'
 
 export default function ProfilePage() {
   const { user, isLoaded, isSignedIn } = useUser()
@@ -26,10 +26,11 @@ export default function ProfilePage() {
     return null
   }
 
-  const credits = user?.publicMetadata?.credits
+  const publicMetadata = user?.publicMetadata as UserPublicMetadata
+  const credits = publicMetadata?.credits as CreditsType
   const hasUnlimitedCredits = credits === 'unlimited'
-  const stripeCustomerId = user?.publicMetadata?.stripeCustomerId
-  const stripeSubscriptionId = user?.publicMetadata?.stripeSubscriptionId
+  const stripeCustomerId = publicMetadata?.stripeCustomerId
+  const stripeSubscriptionId = publicMetadata?.stripeSubscriptionId
 
   async function handleManageSubscription() {
     try {
@@ -69,7 +70,7 @@ export default function ProfilePage() {
             <div>
               <h3 className='font-medium'>Credits</h3>
               <p className='text-sm text-gray-500'>
-                {hasUnlimitedCredits ? 'Unlimited' : credits || 0}
+                {hasUnlimitedCredits ? 'Unlimited' : credits ?? 0}
               </p>
             </div>
 

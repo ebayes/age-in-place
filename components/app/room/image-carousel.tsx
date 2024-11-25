@@ -4,6 +4,8 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Plus, Delete } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { ImageCarouselProps } from '@/types/types';
+import { toBase64, shimmer } from '@/utils/shimmer';
+import { useClerk } from '@clerk/nextjs'; 
 
 export const ImageCarousel: React.FC<ImageCarouselProps> = ({
   allImages,
@@ -15,29 +17,19 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
   fallbackImageUrl,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { openSignIn } = useClerk();
 
   const handleAddNewClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
+    if (!isSignedIn) {
+      openSignIn();
+      return;
+    }
+    // Trigger file input click only if user is signed in
+    const fileInput = document.getElementById('image-upload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
     }
   };
-
-  const toBase64 = (str: string) =>
-    typeof window === 'undefined' ? Buffer.from(str).toString('base64') : window.btoa(str);
-
-  const shimmer = (w: number, h: number) => `
-    <svg width="${w}" height="${h}" version="1.1" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="g">
-          <stop stop-color="#333" offset="20%" />
-          <stop stop-color="#222" offset="50%" />
-          <stop stop-color="#333" offset="70%" />
-        </linearGradient>
-      </defs>
-      <rect width="${w}" height="${h}" fill="#333" />
-      <rect id="r" width="${w}" height="${h}" fill="url(#g)" />
-      <animate xlink:href="#r" attributeName="x" from="-${w}" to="${w}" dur="1s" repeatCount="indefinite" />
-    </svg>`;
 
   return (
     <div className="flex-shrink-0 flex flex-col gap-2 p-[12px] bg-gray-50">
@@ -64,17 +56,17 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
 
         {/* Add New Image Button */}
         <div
-          className="flex-shrink-0"
-          style={{ scrollSnapAlign: 'start' }}
-          onClick={handleAddNewClick}
-        >
-          <AspectRatio ratio={16 / 9}>
-            <div className="h-full w-full rounded-[6px] border border-dashed border-gray-200 flex items-center justify-center flex-col gap-1 bg-background cursor-pointer hover:bg-gray-50 transition-colors">
-              <Plus className="h-5 w-5 text-gray-400" />
-              <span className="text-gray-400 text-sm">Add new</span>
-            </div>
-          </AspectRatio>
-        </div>
+        className="flex-shrink-0"
+        style={{ scrollSnapAlign: 'start' }}
+        onClick={handleAddNewClick}
+      >
+        <AspectRatio ratio={16 / 9}>
+          <div className="h-full w-full rounded-[6px] border border-dashed border-gray-200 flex items-center justify-center flex-col gap-1 bg-background cursor-pointer hover:bg-gray-50 transition-colors">
+            <Plus className="h-5 w-5 text-gray-400" />
+            <span className="text-gray-400 text-sm">Add new</span>
+          </div>
+        </AspectRatio>
+      </div>
 
         {/* Thumbnails */}
         {allImages.map((imgSrc, index) => (
@@ -86,15 +78,15 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
           >
             {isSignedIn && (
               <Button
-                variant="ghost"
-                size="icon"
+                variant="destructive"
+                size="squaresm"
                 className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 z-10"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleDeleteImage(index);
                 }}
               >
-                <Delete className="w-4 h-4 text-red-500" />
+                <Delete size="sm" />
               </Button>
             )}
             <AspectRatio
@@ -117,7 +109,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
                 blurDataURL={`data:image/svg+xml;base64,${toBase64(shimmer(160, 90))}`}
                 style={{ objectFit: 'cover' }}
                 onError={(e) => {
-                  console.error(`Failed to load thumbnail: ${imgSrc}`);
+                  //  console.error(`Failed to load thumbnail: ${imgSrc}`);
                   // @ts-ignore
                   e.target.src = fallbackImageUrl;
                 }}

@@ -17,8 +17,7 @@ export default async function Page({ params }: { params: { room: string } }) {
   }
 
   if (!user && roomId === 0) {
-    // User is not logged in and accessing demo room
-    return <Home />;
+    return <Home demoMode={true} />; 
   }
 
   if (user) {
@@ -37,7 +36,7 @@ export default async function Page({ params }: { params: { room: string } }) {
       .single();
 
     if (error) {
-      console.error('Error fetching room:', error);
+      //  console.error('Error fetching room:', error);
       // If room doesn't exist or doesn't belong to the user, redirect or show an error
       redirect('/app');
       return;

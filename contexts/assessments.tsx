@@ -3,18 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useSupabaseClient } from '@/hooks/useSupabaseClient';
-
-type Assessment = {
-  id: number;
-  room_name: string;
-  images: string[];
-};
-
-type AssessmentsContextType = {
-  assessments: Assessment[];
-  loading: boolean;
-  refreshAssessments: () => void;
-};
+import { Assessment, AssessmentsContextType } from '@/types/types';
 
 const AssessmentsContext = createContext<AssessmentsContextType | undefined>(undefined);
 
@@ -38,7 +27,7 @@ export const AssessmentsProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
       setAssessments(data || []);
     } catch (error) {
-      console.error('Error loading assessments:', error);
+      //  console.error('Error loading assessments:', error);
       setAssessments([]);
     } finally {
       setLoading(false);

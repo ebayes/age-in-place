@@ -4,16 +4,16 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { SignInButton, SignedIn, SignedOut, UserButton, useUser, useClerk } from '@clerk/nextjs'
-import { Globe, Zap } from 'lucide-react'
+import { Umbrella, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import { AddFreeCredits } from '@/lib/actions'
 import SubscriptionDialog from '@/components/subscription-dialog'
 import { Badge } from '@/components/ui/badge'
 import { useSupabaseClient } from '@/hooks/useSupabaseClient';
 import { useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 
 export default function Header() {
-  const [selectedTab, setSelectedTab] = useState<string>("rooms")
   const { isLoaded, isSignedIn, user } = useUser()
   const { session } = useClerk()
   const credits = user?.publicMetadata?.credits
@@ -23,6 +23,19 @@ export default function Header() {
   const [subscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false)
   const client = useSupabaseClient()
   const router = useRouter()
+  const pathname = usePathname()
+  const [selectedTab, setSelectedTab] = useState<string>(() => {
+    if (pathname.includes('/report')) return 'report'
+    return 'rooms'
+  })
+
+  useEffect(() => {
+    if (pathname.includes('/report')) {
+      setSelectedTab('report')
+    } else if (pathname.includes('/app')) {
+      setSelectedTab('rooms')
+    }
+  }, [pathname])
 
   useEffect(() => {
     if (session) {
@@ -33,7 +46,12 @@ export default function Header() {
   async function handleReportClick(e: React.MouseEvent) {
     e.preventDefault();
     
-    if (!user) return;
+    if (!user) {
+      router.push('/app/report');
+      return;
+    }
+    
+    if (!client) return;  
   
     const { data, error } = await client
       .from('tasks')
@@ -42,7 +60,7 @@ export default function Header() {
       .limit(1);
   
     if (error) {
-      console.error('Error fetching tasks:', error);
+      //  console.error('Error fetching tasks:', error);
       return;
     }
     setSelectedTab("report");
@@ -70,7 +88,7 @@ export default function Header() {
     <header className="h-[52px] flex justify-between items-center border-b bg-background">
       <div className="w-[52px] h-[52px] flex items-center justify-center border-r">
         <Link href='/'>
-          <Globe
+          <Umbrella
             className="w-[24px] h-[24px] text-gray-700 cursor-pointer"
           />
         </Link>
@@ -78,11 +96,11 @@ export default function Header() {
       <div className="flex items-center gap-[15px] px-[18px] flex-1">
         <p className="text-gray-700 text-[16px] font-medium">ageinplace.io</p>
         <div className="flex items-center gap-[8px]">
-          {[
-            { id: "rooms", label: "Rooms" },
-            { id: "report", label: "Report" },
-          ].map((tab) => (
-            <Link
+        {[
+          { id: "rooms", label: "Rooms" },
+          { id: "report", label: "Report" },
+        ].map((tab) => (
+          <Link
             key={tab.id}
             href={tab.id === "report" ? "#" : "/app"}
             onClick={(e) => {
@@ -92,13 +110,13 @@ export default function Header() {
                 setSelectedTab(tab.id);
               }
             }}
-              className={`cursor-pointer px-3 py-2 text-[14px] font-light transition-colors relative ${
-                selectedTab === tab.id
-                  ? "text-foreground"
-                  : "text-gray-400 hover:text-gray-500"
-              }`}
-            >
-              {tab.label}
+            className={`cursor-pointer px-3 py-2 text-[14px] font-light transition-colors relative ${
+              selectedTab === tab.id
+                ? "text-foreground"
+                : "text-gray-400 hover:text-gray-500"
+            }`}
+          >
+            {tab.label}
               {tab.id === "report" && (
                 <Badge
                   color="purple"

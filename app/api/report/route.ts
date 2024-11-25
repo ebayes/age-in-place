@@ -61,7 +61,7 @@ export async function POST(req: Request) {
     const { answers }: { answers: OnboardingAnswers } = await req.json();
     
     // Log the answers to see what we're getting
-    console.log('Received answers:', answers);
+    // console.log('Received answers:', answers);
 
     try {
       const response = await openai.chat.completions.create({
@@ -116,12 +116,12 @@ Each section's content must:
     })
 
     // Log the raw GPT response
-    console.log('GPT Response:', response.choices[0].message.content);
+    //  console.log('GPT Response:', response.choices[0].message.content);
 
     const rawResponse = JSON.parse(response.choices[0].message.content || '{}')
     
     // Log the parsed response before validation
-    console.log('Parsed response:', rawResponse);
+    //  console.log('Parsed response:', rawResponse);
 
     const validatedResponse = ReportResponse.parse(rawResponse)
 
@@ -136,14 +136,14 @@ Each section's content must:
 
     return NextResponse.json(validatedResponse)
   } catch (openAiError: any) {
-    console.error('OpenAI or validation error:', openAiError);
+    //  console.error('OpenAI or validation error:', openAiError);
     return new NextResponse(
       `Error generating report: ${openAiError.message}`, 
       { status: 500 }
     )
   }
 } catch (error: any) {
-  console.error('API route error:', error);
+  //  console.error('API route error:', error);
   return new NextResponse(
     `Something went wrong: ${error.message}`, 
     { status: 500 }

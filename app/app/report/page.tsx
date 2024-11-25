@@ -14,6 +14,8 @@ import Image from 'next/image';
 import { Product, Annotation } from '@/types/types';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { ArrowHover } from '@/components/ui/arrow-hover';
+import { toBase64, shimmer } from '@/utils/shimmer';
+import { dummyAnnotations, dummyImages, dummyProducts, dummyReport } from '@/data/dummy';
 
 type AssessmentData = {
   room_name: string;
@@ -33,9 +35,39 @@ function Page() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isUserLoaded || !isSessionLoaded || !client || !user) return;
-
     async function fetchData() {
+      if (!isUserLoaded || !isSessionLoaded) return;
+
+      // If no user, load dummy data
+      if (!user) {
+        setReport(dummyReport);
+        // Use dummy data from annotations and products
+        setAssessmentsByRoom([{
+          room_name: 'Kitchen',
+          images: dummyImages,
+          annotations: dummyAnnotations
+        }]);
+        
+        // Create dummy products by room mapping
+        const dummyProductsByRoom: { [roomName: string]: Product[] } = {
+          'Kitchen': Object.entries(dummyProducts).map(([id, product]) => ({
+            product_id: id,
+            product_name: product.name,
+            description: product.description,
+            price: product.price,
+            thumbnail: product.image_url,
+            url: '#',
+            cost_rating: 0
+          }))
+        };
+        setProductsByRoom(dummyProductsByRoom);
+        setLoading(false);
+        return;
+      }
+
+      // Regular data fetching for logged-in users
+      if (!client) return;
+      
       try {
         // Fetch report data
         const { data: reportData, error: reportError } = await client
@@ -101,7 +133,7 @@ function Page() {
           setProductsByRoom(productsByRoomTemp);
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        // console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
@@ -111,33 +143,17 @@ function Page() {
   }, [user, isUserLoaded, isSessionLoaded, client]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div>
+      {/* Loading state */}
+    </div>;
   }
 
   if (!report) {
     return <div>No report found</div>;
   }
 
-  // Function to generate shimmer effect for images (optional)
-  const toBase64 = (str: string) =>
-    typeof window === 'undefined' ? Buffer.from(str).toString('base64') : window.btoa(str);
-
-  const shimmer = (w: number, h: number) => `
-    <svg width="${w}" height="${h}" version="1.1" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="g">
-          <stop stop-color="#333" offset="20%" />
-          <stop stop-color="#222" offset="50%" />
-          <stop stop-color="#333" offset="70%" />
-        </linearGradient>
-      </defs>
-      <rect width="${w}" height="${h}" fill="#333" />
-      <rect id="r" width="${w}" height="${h}" fill="url(#g)" />
-      <animate xlink:href="#r" attributeName="x" from="-${w}" to="${w}" dur="1s" repeatCount="indefinite" />
-    </svg>`;
-
   return (
-    <div className="flex flex-col items-center justify-center w-full px-[32px] bg-[#F9F8F9] py-[30px]">
+    <div className="flex flex-col items-start justify-start w-full px-[32px] bg-[#F9F8F9] pt-[30px] pb-[100px] overflow-auto fixed h-full">
       <div
         className="bg-white max-w-[1048px] w-full mx-auto px-[89px] py-[71px] rounded-[5px] border border-[#E9E8EA]"
         style={{

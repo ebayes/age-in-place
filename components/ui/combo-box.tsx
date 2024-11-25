@@ -13,9 +13,9 @@ import { Check, ChevronDown, Search } from "lucide-react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 
 interface SelectContextApi {
-  selection: string;
+  selection: string | undefined;
   select: (val: string) => void;
-  open: boolean;
+  open: boolean | undefined;
   setOpen: (val: boolean) => void;
 }
 
@@ -26,6 +26,7 @@ interface SelectProps extends PopoverProps {
   onValueChange?: (value: string) => void;
   defaultValue?: string;
   className?: string;
+  placeholder?: string;
 }
 
 /** Select Component **/
@@ -40,6 +41,7 @@ export const Select = React.forwardRef<HTMLDivElement, SelectProps>(
       onValueChange,
       className,
       children,
+      placeholder = 'Select...',
       ...otherProps
     },
     ref
@@ -78,6 +80,7 @@ Select.displayName = 'Select';
 
 interface SelectTriggerProps extends React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Trigger> {
   renderValue?: (selectedValue: string) => React.ReactNode;
+  placeholder?: string;
 }
 
 /** SelectTrigger Component **/
@@ -138,7 +141,7 @@ export const SelectInput = React.forwardRef<
   ) => {
     const [inputValue, setInputValue] = useControllableState({
       prop: value,
-      defaultProp: defaultValue,
+      defaultProp: defaultValue as string | undefined,
       onChange: onValueChange,
     });
 

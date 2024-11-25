@@ -3,6 +3,22 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import { Loader, ArrowLeft, ArrowRight } from "@/components/icons";
+import type { IconSize } from '@/types/types';
+
+type IconSizeForButton = 'xs' | 'sm' | 'md' | 'lg';
+
+const iconSizes: Record<
+  NonNullable<VariantProps<typeof buttonVariants>['size']>,
+  IconSizeForButton
+> = {
+  sm: 'xs',
+  md: 'sm',
+  lg: 'md',
+  xl: 'lg', 
+  icon: 'sm',
+  square: 'sm',
+  squaresm: 'xs',
+};
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center whitespace-nowrap text-sm rounded-[8px] font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
@@ -49,8 +65,9 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'prefix'>,
+    Omit<VariantProps<typeof buttonVariants>, 'size'> {
+  size?: NonNullable<VariantProps<typeof buttonVariants>['size']>;
   asChild?: boolean;
   prefix?: React.ElementType;
   suffix?: React.ElementType;
@@ -78,13 +95,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const Component = asChild ? Slot : "button";
 
-    const iconSizes: { [key: string]: string } = {
-      sm: "xs",
-      md: "sm",
-      lg: "md",
-      xl: "lg",
-    };
-    const iconSize = iconSizes[size] || "sm";
+    // Correctly typed iconSize
+    const iconSize = iconSizes[size];
 
     const DirectionIcon =
       direction === "left"

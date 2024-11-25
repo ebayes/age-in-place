@@ -18,8 +18,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { createClient } from '@supabase/supabase-js';
 import { useSupabaseClient } from '@/hooks/useSupabaseClient';
 import { Skeleton } from '../ui/skeleton';
+import { dummyImages, dummyAnnotations } from '@/data/dummy';
 
-export default function Home() {
+interface HomeProps {
+  demoMode?: boolean;
+}
+
+export default function Home({ demoMode = false }: HomeProps) {
   const router = useRouter();
   const { user, isSignedIn, isLoaded } = useUser();
   const { session } = useSession();
@@ -51,18 +56,44 @@ export default function Home() {
   const [hoveredProductId, setHoveredProductId] = useState<string | null>(null);
   const [productCounts, setProductCounts] = useState<{ [productId: string]: number }>({});
   const supabaseClient = useSupabaseClient();
+  const [subscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false);
   const supabaseStorageClient = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_KEY!
   );
 
 useEffect(() => {
+  if (demoMode) {
+    // Load dummy data when in demo mode
+    setAllImages(dummyImages);
+    setSelectedImageIndex(0);
+    setAnnotationsList(dummyAnnotations as Annotation[]);
+
+    // Calculate product counts and IDs from dummy annotations
+    const counts: { [productId: string]: number } = {};
+    const allProductIdsSet = new Set<string>();
+
+    dummyAnnotations.forEach((annotation) => {
+      if (annotation.modifications) {
+        annotation.modifications.forEach((modification) => {
+          if (modification.product_id) {
+            counts[modification.product_id] = (counts[modification.product_id] || 0) + 1;
+            allProductIdsSet.add(modification.product_id);
+          }
+        });
+      }
+    });
+
+    setAllProductIds(Array.from(allProductIdsSet));
+    setProductCounts(counts);
+
+    return;
+  }
   if (currentAssessment && currentAssessment.images.length > 0) {
     setAllImages(currentAssessment.images);
     setSelectedImageIndex(0);
     setAnnotationsList(currentAssessment.annotations || []);
 
-    // Extract all product IDs and calculate counts from annotations
     const allProductIdsSet = new Set<string>();
     const counts: { [productId: string]: number } = {};
     const annotations = currentAssessment.annotations || [];
@@ -88,7 +119,7 @@ useEffect(() => {
     setCurrentProductIds([]);
     setProductCounts({});
   }
-}, [currentAssessment]);
+  }, [demoMode, currentAssessment]);
 
   const currentAnnotations = selectedImageIndex !== null ? annotationsList[selectedImageIndex] : null;
 
@@ -112,6 +143,10 @@ useEffect(() => {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!supabaseClient) {
+      toast.error('Database connection not available');
+      return;
+    }
   
     setProcessing(true);
   
@@ -175,6 +210,7 @@ useEffect(() => {
       modifications: modifications,
       frameWidth: dinoData.jsonData?.frameWidth || 0,
       frameHeight: dinoData.jsonData?.frameHeight || 0,
+      resultImageUrl: dinoData.resultImageUrl || '',
     };
 
     setAllImages((prev) => [imageUrl, ...prev]);
@@ -193,7 +229,7 @@ useEffect(() => {
 
     toast.success('Image uploaded successfully.');
   } catch (error) {
-    console.error('Error uploading image:', error);
+    //  console.error('Error uploading image:', error);
     toast.error('Failed to upload image.');
   } finally {
     setProcessing(false);
@@ -214,12 +250,20 @@ const readFileAsBase64 = (file: File): Promise<string> => {
 
 const handleDeleteImage = async (index: number) => {
   if (!currentAssessment) return;
+  if (!supabaseClient) {
+    toast.error('Database connection not available');
+    return;
+  }
 
   setProcessing(true);
 
   try {
     const imageUrl = allImages[index];
     const fileName = imageUrl.split('/').pop();
+
+    if (!fileName) {
+      throw new Error('Invalid file name');
+    }
 
     // Delete the image from Supabase Storage
     const { error: deleteError } = await supabaseStorageClient.storage
@@ -262,7 +306,7 @@ const handleDeleteImage = async (index: number) => {
 
     toast.success('Image deleted successfully.');
   } catch (error) {
-    console.error('Error deleting image:', error);
+    //  console.error('Error deleting image:', error);
     toast.error('Failed to delete image.');
   } finally {
     setProcessing(false);
@@ -273,6 +317,10 @@ const handleDeleteImage = async (index: number) => {
     if (!image) return;
     if (!isSignedIn) {
       openSignIn();
+      return;
+    }
+    if (!supabaseClient) {
+      toast.error('Database connection not available');
       return;
     }
 
@@ -286,7 +334,7 @@ const handleDeleteImage = async (index: number) => {
         .single();
 
       if (error || !roomData) {
-        console.error('Error fetching product_ids:', error);
+        //  console.error('Error fetching product_ids:', error);
         toast.error('Failed to fetch product IDs.');
         setProcessing(false);
         return;
@@ -312,32 +360,31 @@ const handleDeleteImage = async (index: number) => {
         })
 
         if (!response.ok) {
-          const status = response.status
+          const status = response.status;
           switch (status) {
             case 401:
-              openSignIn()
-              break
+              openSignIn();
+              break;
             case 402:
               toast.error('You have no credits left.', {
                 action: {
                   label: 'Get more',
                   onClick: () => setSubscriptionDialogOpen(true)
                 }
-              })
-              break
+              });
+              break;
             default:
-              toast.error('Something went wrong!')
-              break
+              toast.error('Something went wrong!');
+              break;
           }
-          return
+          return;
         }
 
         const data = await response.json()
         setModifications(data.modifications)
 
-        // Chain with Dino API
         const partDescriptions = data.modifications
-          .map((mod: Modification) => mod.part_description)
+          .map((mod: Modification) => mod.location)
           .join(', ')
 
         const formData = new FormData()
@@ -366,7 +413,7 @@ const handleDeleteImage = async (index: number) => {
         session?.reload()
       }
     } catch (error) {
-      console.error('Error:', error)
+      //  console.error('Error:', error)
       toast.error('Failed to process image')
     } finally {
       setProcessing(false)
@@ -391,57 +438,53 @@ const handleDeleteImage = async (index: number) => {
         openSignIn();
         return;
       }
-      const currentAssessment = assessments.length > 0 ? assessments[0] : null;
-      console.log('Current Assessment:', currentAssessment);
-
-      const assessmentId = currentAssessment?.id;
-      if (!assessmentId) {
-        toast.error('Assessment ID not found.');
+  
+      const currentAssessment = assessments.find(a => a.id === roomId);
+      
+      if (!currentAssessment) {
+        toast.error('Assessment not found.');
         return;
       }
+  
+      const assessmentId = currentAssessment.id;
       const imageUrls: string[] = currentAssessment.images;
+      
       const imagePaths = imageUrls.map((url) => {
-      const urlObj = new URL(url);
-      let path = urlObj.pathname;
-
+        const urlObj = new URL(url);
+        let path = urlObj.pathname;
+  
         const prefix = '/storage/v1/object/public/rooms/';
         if (path.startsWith(prefix)) {
           path = path.substring(prefix.length);
         }
-
+  
         path = decodeURIComponent(path);
-
-        return path; 
+        return path;
       });
-
-      console.log('Image Paths to be deleted:', imagePaths);
-
+  
       const { data, error: deleteError } = await supabaseClient.storage
-        .from('rooms') 
+        .from('rooms')
         .remove(imagePaths);
-
+  
       if (deleteError) {
-        console.error('Error deleting images from storage:', deleteError);
         toast.error('Failed to delete images.');
         return;
       }
-
+  
       const { error: deleteAssessmentError } = await supabaseClient
         .from('assessments')
         .delete()
         .eq('id', assessmentId);
-
+  
       if (deleteAssessmentError) {
-        console.error('Error deleting room:', deleteAssessmentError);
         toast.error('Failed to delete room.');
         return;
       }
-
+  
       toast.success('Room and images deleted successfully.');
-      await refreshAssessments(); 
+      await refreshAssessments();
       router.push('/app');
     } catch (error) {
-      console.error('Error during deletion:', error);
       toast.error('An unexpected error occurred.');
     } finally {
       setIsDeleteModalOpen(false);
@@ -506,6 +549,7 @@ const handleDeleteImage = async (index: number) => {
         hoveredProductId={hoveredProductId}
         setHoveredProductId={setHoveredProductId}
         productCounts={productCounts}
+        demoMode={demoMode}
       />
     </div>
   );

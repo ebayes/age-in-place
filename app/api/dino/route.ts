@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify(inputs),
     });
 
-    console.log('NVIDIA API response status:', response);
+    // console.log('NVIDIA API response status:', response);
 
     let jsonData: any = null;
 
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
       ({ jsonData } = await pollForResult(nvcf_reqid));
     } else {
       const errorText = await response.text();
-      console.error(`Unexpected response from NVIDIA API: ${response.status}, ${errorText}`);
+      // console.error(`Unexpected response from NVIDIA API: ${response.status}, ${errorText}`);
       throw new Error(`Unexpected response status: ${response.status}, ${errorText}`);
     }
 
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
       throw new Error('No JSON data found in the response.');
     }
   } catch (error: any) {
-    console.error('Error in API handler:', error);
+    // console.error('Error in API handler:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -175,7 +175,7 @@ async function uploadAsset(filePath: string, description: string): Promise<strin
   return asset_id;
 }
 
-async function handleResponse(response: Response): Promise<{ resultImagePath: string; jsonData: any; }> {
+async function handleResponse(response: Response): Promise<{ jsonData: any; }> {
   const arrayBuffer = await response.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
 
@@ -183,7 +183,7 @@ async function handleResponse(response: Response): Promise<{ resultImagePath: st
   const tempDir = os.tmpdir();
   const outputDir = path.join(tempDir, uuidv4());
   fs.mkdirSync(outputDir);
-  
+
   const zipPath = path.join(outputDir, 'response.zip');
   fs.writeFileSync(zipPath, buffer);
 
@@ -197,7 +197,7 @@ async function handleResponse(response: Response): Promise<{ resultImagePath: st
   const jsonFile = files.find((f) => f.endsWith('.json') || f.endsWith('.response'));
 
   if (!jsonFile) {
-    throw new Error('Result image not found in the unzipped contents.');
+    throw new Error('Result JSON not found in the unzipped contents.');
   }
 
   const jsonFilePath = path.join(outputDir, jsonFile);
@@ -213,6 +213,7 @@ async function handleResponse(response: Response): Promise<{ resultImagePath: st
     const frameHeight = messageContent.frameHeight || 0;
     const boundingBoxes = messageContent.boundingBoxes || [];
 
+    // Clean up temporary files
     if (fs.existsSync(outputDir)) {
       fs.rmSync(outputDir, { recursive: true, force: true });
     }
@@ -229,7 +230,7 @@ async function handleResponse(response: Response): Promise<{ resultImagePath: st
   }
 }
 
-async function pollForResult(nvcf_reqid: string): Promise<{ resultImagePath: string; jsonData: any; }> {
+async function pollForResult(nvcf_reqid: string): Promise<{ jsonData: any; }> {
   let retries = MAX_RETRIES;
 
   while (retries > 0) {
