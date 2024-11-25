@@ -7,6 +7,8 @@ const nextConfig = {
       'm.media-amazon.com',
       'mobileimages.lowes.com'
     ],
+    // Disable image optimization
+    unoptimized: true,
   },
   typescript: {
     ignoreBuildErrors: true,
@@ -15,15 +17,9 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   experimental: {
-    outputFileTracingRoot: process.env.VERCEL ? undefined : process.cwd(),
-    outputFileTracingExcludes: {
-      '*': [
-        'node_modules/@swc/core-*/**/*',
-        'node_modules/@esbuild/**/*',
-        '.next/**/*',
-        '**/*.{json,md,txt,log,lock}'
-      ],
-    },
+    // Remove any experimental features that might cause issues
+    outputFileTracingRoot: undefined,
+    outputFileTracingExcludes: undefined,
   }
 };
 
