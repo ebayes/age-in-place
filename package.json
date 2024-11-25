@@ -11,6 +11,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^1.0.2",
     "@clerk/nextjs": "^4.29.8",
+    "@clerk/types": "^4.35.0",
     "@huggingface/transformers": "^3.0.2",
     "@prisma/client": "^5.10.2",
     "@radix-ui/react-aspect-ratio": "^1.1.0",
