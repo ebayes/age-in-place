@@ -15,8 +15,10 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // Updated from experimental.serverComponentsExternalPackages
-  serverExternalPackages: ['@prisma/client']
+  // Updated for Next.js 15
+  experimental: {
+    serverComponentsExternalPackages: ['@prisma/client'],
+  }
 };
 
 module.exports = nextConfig;
