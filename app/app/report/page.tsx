@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useSession } from '@clerk/nextjs';
 import { useSupabaseClient } from '@/hooks/useSupabaseClient'; 
-import { ArrowDown, Plus, Delete, Link } from '@/components/icons';
+import { ArrowDown, Link } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import ReactMarkdown from 'react-markdown';
