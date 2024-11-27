@@ -5,6 +5,12 @@ import Image from 'next/image';
 import { Product, RightPanelProps } from '@/types/types';
 import { useSupabaseClient } from '@/hooks/useSupabaseClient';
 import { dummyProducts } from '@/data/dummy';
+import {
+  HoverCard as OnboardingHoverCard,
+  HoverCardContent as OnboardingHoverCardContent,
+  HoverCardTrigger as OnboardingHoverCardTrigger,
+} from "@/components/ui/onboarding-hover";
+import { useOnboarding } from '@/contexts/onboard';
 
 export function RightPanel({
   allProductIds,
@@ -16,6 +22,8 @@ export function RightPanel({
 }: RightPanelProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const supabaseClient = useSupabaseClient();
+  const { onboardingStep, setOnboardingStep, shouldShowOnboarding } = useOnboarding();
+
   
   useEffect(() => {
     if (demoMode) {
@@ -81,11 +89,17 @@ export function RightPanel({
 
       {/* Product List */}
       <div className="flex flex-col p-[8px] overflow-y-auto flex-1">
-        {products.map((product) => {
+        {products.map((product, index) => {
           const isDisabled = !currentProductIds.includes(product.product_id);
           const isActive = hoveredProductId === product.product_id;
 
             return (
+              <OnboardingHoverCard
+              key={product.product_id}
+              open={shouldShowOnboarding && index === 0 && onboardingStep === 4}
+              onOpenChange={() => {}}
+            >
+              <OnboardingHoverCardTrigger asChild>
               <div
                 key={product.product_id}
                 className={`flex items-center p-[8px] gap-[8px] w-full ${
@@ -144,6 +158,28 @@ export function RightPanel({
                 </Button>
               </div>
             </div>
+            </OnboardingHoverCardTrigger>
+              {index === 0 && (
+                <OnboardingHoverCardContent side="left" align="center">
+                  <div className="max-w-xs text-center">
+                    <p className="font-medium text-[13px]">
+                      View and compare product
+                      <br />
+                      recommendations here
+                    </p>
+                    <div className="mt-2 w-full flex justify-between items-center">
+                      <p className="text-[12px] text-gray-500">4/5</p>
+                      <Button 
+                        size="sm" 
+                        onClick={() => setOnboardingStep && setOnboardingStep(5)}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                </OnboardingHoverCardContent>
+              )}
+            </OnboardingHoverCard>
           );
         })}
       </div>

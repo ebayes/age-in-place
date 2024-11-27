@@ -12,9 +12,16 @@ import { Badge } from '@/components/ui/badge'
 import { useSupabaseClient } from '@/hooks/useSupabaseClient';
 import { useRouter } from 'next/navigation'
 import { usePathname } from 'next/navigation'
+import { useOnboarding } from '@/contexts/onboard'
+import {
+  HoverCard as OnboardingHoverCard,
+  HoverCardContent as OnboardingHoverCardContent,
+  HoverCardTrigger as OnboardingHoverCardTrigger,
+} from "@/components/ui/onboarding-hover";
 
 export default function Header() {
   const { isLoaded, isSignedIn, user } = useUser()
+  const { onboardingStep, setOnboardingStep, shouldShowOnboarding } = useOnboarding()
   const { session } = useClerk()
   const credits = user?.publicMetadata?.credits
   const newUser = typeof credits === 'undefined'
@@ -100,6 +107,12 @@ export default function Header() {
           { id: "rooms", label: "Rooms" },
           { id: "report", label: "Report" },
         ].map((tab) => (
+          <OnboardingHoverCard
+            key={tab.id}
+            open={shouldShowOnboarding && tab.id === "report" && onboardingStep === 5}
+            onOpenChange={() => {}}
+          >
+            <OnboardingHoverCardTrigger asChild>
           <Link
             key={tab.id}
             href={tab.id === "report" ? "#" : "/app"}
@@ -127,6 +140,28 @@ export default function Header() {
                 </Badge>
               )}
             </Link>
+            </OnboardingHoverCardTrigger>
+            {tab.id === "report" && (
+              <OnboardingHoverCardContent side="bottom" align="center">
+                <div className="max-w-xs text-center">
+                  <p className="font-medium text-[13px]">
+                    Once you&apos;ve uploaded all your images,
+                    <br />
+                    click to generate a personalized report
+                  </p>
+                  <div className="mt-2 w-full flex justify-between items-center">
+                    <p className="text-[12px] text-gray-500">5/5</p>
+                    <Button 
+                      size="sm" 
+                      onClick={() => setOnboardingStep(0)}
+                    >
+                      Get started
+                    </Button>
+                  </div>
+                </div>
+              </OnboardingHoverCardContent>
+            )}
+          </OnboardingHoverCard>
           ))}
         </div>
       </div>

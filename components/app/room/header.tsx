@@ -11,6 +11,8 @@
      image,
      handleSubmit,
      onDeleteClick,
+     onboardingStep,
+     setOnboardingStep,
    }) => {
      return (
        <div className="flex-shrink-0 flex items-center justify-between h-[48px] bg-gray-50 border-b px-[12px]">

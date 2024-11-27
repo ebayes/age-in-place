@@ -9,7 +9,14 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import {
+  HoverCard as OnboardingHoverCard,
+  HoverCardContent as OnboardingHoverCardContent,
+  HoverCardTrigger as OnboardingHoverCardTrigger,
+} from "@/components/ui/onboarding-hover";
 import { ShoppingCart } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useOnboarding } from '@/contexts/onboard';
 // import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 
@@ -38,6 +45,7 @@ export const MainImageDisplay: React.FC<MainImageDisplayProps> = ({
     offsetX: number;
     offsetY: number;
   } | null>(null);
+  const { onboardingStep, setOnboardingStep, shouldShowOnboarding } = useOnboarding();
 
   useEffect(() => {
     const updateImageDimensions = () => {
@@ -198,8 +206,48 @@ export const MainImageDisplay: React.FC<MainImageDisplayProps> = ({
                         zIndex: 2,
                       }}
                     >
+                      <OnboardingHoverCard 
+  open={shouldShowOnboarding && index === 0 && onboardingStep === 3}
+          onOpenChange={() => {}}
+        >
+          <OnboardingHoverCardTrigger asChild>
+            <div>
+              <PulseDot 
+                color="#8B5CF6"
+                size={16}
+                pulseSize={isHovered ? 0 : 24}
+                style={{
+                  transform: isHovered ? 'scale(1.1)' : 'scale(1)',
+                  transition: 'transform 300ms',
+                }}
+              />
+            </div>
+            </OnboardingHoverCardTrigger>
+          {index === 0 && ( // Only show onboarding content for first dot
+            <OnboardingHoverCardContent side="top" align="center">
+              <div className="max-w-xs text-center">
+                <p className="font-medium text-[13px]">
+                  Our AI model will process your image
+                  <br />
+                  and recommend improvements
+                </p>
+                <div className="mt-2 w-full flex justify-between items-center">
+                  <p className="text-[12px] text-gray-500">3/5</p>
+                  <Button 
+                    size="sm" 
+                    onClick={() => setOnboardingStep && setOnboardingStep(4)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            </OnboardingHoverCardContent>
+          )}
+        </OnboardingHoverCard>
                       <HoverCard
                         open={isHovered}
+                        openDelay={0}
+                        closeDelay={0}
                         onOpenChange={(open) => {
                           if (open) {
                             onAnnotationHover?.(pos?.productId || '');

@@ -4,6 +4,7 @@ import '../globals.css'
 import Header from '@/components/app/header'
 import SideNavbar from '@/components/app/side-bar'
 import { AssessmentsProvider } from '@/contexts/assessments'
+import { OnboardingProvider } from '@/contexts/onboard'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -19,6 +20,7 @@ export default function RootLayout({
 }) {
   return (
     <AssessmentsProvider>
+      <OnboardingProvider>
     <html lang='en'>
     <body className={inter.className}>
       <div className="h-screen flex flex-col">
@@ -31,6 +33,7 @@ export default function RootLayout({
       <Toaster position="top-center" theme='light' richColors closeButton />
     </body>
   </html>
+  </OnboardingProvider>
   </AssessmentsProvider>
   )
 }

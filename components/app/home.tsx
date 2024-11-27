@@ -19,6 +19,7 @@ import { createClient } from '@supabase/supabase-js';
 import { useSupabaseClient } from '@/hooks/useSupabaseClient';
 import { Skeleton } from '../ui/skeleton';
 import { dummyImages, dummyAnnotations } from '@/data/dummy';
+import { useOnboarding } from '@/contexts/onboard'
 
 interface HomeProps {
   demoMode?: boolean;
@@ -57,6 +58,7 @@ export default function Home({ demoMode = false }: HomeProps) {
   const [productCounts, setProductCounts] = useState<{ [productId: string]: number }>({});
   const supabaseClient = useSupabaseClient();
   const [subscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false);
+  const { onboardingStep, setOnboardingStep } = useOnboarding()
   const supabaseStorageClient = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_KEY!

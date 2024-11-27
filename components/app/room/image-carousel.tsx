@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { ImageCarouselProps } from '@/types/types';
 import { toBase64, shimmer } from '@/utils/shimmer';
 import { useClerk } from '@clerk/nextjs'; 
-
+import { HoverCard, HoverCard as OnboardingHoverCard, HoverCardContent as OnboardingHoverCardContent, HoverCardTrigger as OnboardingHoverCardTrigger } from "@/components/ui/onboarding-hover"
+import { useOnboarding } from '@/contexts/onboard';
 export const ImageCarousel: React.FC<ImageCarouselProps> = ({
   allImages,
   selectedImageIndex,
@@ -18,6 +19,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { openSignIn } = useClerk();
+  const { onboardingStep, setOnboardingStep, shouldShowOnboarding } = useOnboarding();
 
   const handleAddNewClick = () => {
     if (!isSignedIn) {
@@ -54,6 +56,11 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
           className="hidden"
         />
 
+<OnboardingHoverCard 
+  open={shouldShowOnboarding && onboardingStep === 2}
+  onOpenChange={() => {}}>
+          <OnboardingHoverCardTrigger asChild>
+
         {/* Add New Image Button */}
         <div
         className="flex-shrink-0"
@@ -67,6 +74,26 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
           </div>
         </AspectRatio>
       </div>
+      </OnboardingHoverCardTrigger>
+          <OnboardingHoverCardContent side="top" align="center">
+            <div className="max-w-xs text-center">
+              <p className="font-medium text-[13px]">
+                Upload an image of your
+                <br />
+                room by clicking &quot;add new&quot;
+              </p>
+              <div className="mt-2 w-full flex justify-between items-center">
+                <p className="text-[12px] text-gray-500">2/5</p>
+                <Button 
+                  size="sm" 
+                  onClick={() => setOnboardingStep && setOnboardingStep(3)}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          </OnboardingHoverCardContent>
+        </OnboardingHoverCard>
 
         {/* Thumbnails */}
         {allImages.map((imgSrc, index) => (
