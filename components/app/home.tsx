@@ -363,6 +363,8 @@ const handleDeleteImage = async (index: number) => {
 
         if (!response.ok) {
           const status = response.status;
+          const errorText = await response.text(); 
+
           switch (status) {
             case 401:
               openSignIn();
@@ -376,7 +378,7 @@ const handleDeleteImage = async (index: number) => {
               });
               break;
             default:
-              toast.error('Something went wrong!');
+              toast.error(errorText || 'Something went wrong!');
               break;
           }
           return;
