@@ -24,7 +24,7 @@ import {
 
 function SideNavbar() {
   const { assessments, loading } = useAssessmentsContext();
-  const { user } = useUser(); 
+  const { user, isLoaded } = useUser();
   const currentPath = usePathname();
   const currentRoom = currentPath.split('/').pop();
   const { onboardingStep, setOnboardingStep, shouldShowOnboarding } = useOnboarding();
@@ -32,12 +32,13 @@ function SideNavbar() {
 return (
     <nav className="h-full w-[52px] border-r bg-background flex flex-col items-center py-[16px] px-[12px]">
       <div className="flex flex-col items-center gap-[12px]">
+      {isLoaded && ( // Only render once user state is loaded
         <OnboardingHoverCard 
-          open={shouldShowOnboarding && onboardingStep === 1}
+          open={shouldShowOnboarding && onboardingStep === 1 && !user}
           onOpenChange={() => {}}
         >
           <OnboardingHoverCardTrigger asChild>
-            <div>  {/* Wrapper div for NewRoom */}
+            <div>
               <NewRoom />
             </div>
           </OnboardingHoverCardTrigger>
@@ -60,6 +61,7 @@ return (
             </div>
           </OnboardingHoverCardContent>
         </OnboardingHoverCard>
+        )}
 
         {user ? (
           <>

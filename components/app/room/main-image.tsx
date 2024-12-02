@@ -191,40 +191,38 @@ export const MainImageDisplay: React.FC<MainImageDisplayProps> = ({
                 }}
               />
 
-              {/* Render the dots and bounding boxes */}
-              {positions.map((pos, index) => {
-                const isHovered = hoveredAnnotationIndex === index;
-                return (
-                  <React.Fragment key={index}>
-                    {/* Dot */}
-                    <div
-                      className="absolute"
-                      style={{
-                        left: `${clamp(pos?.left || 0, 0, 100)}%`,
-                        top: `${clamp(pos?.top || 0, 0, 100)}%`,
-                        transform: 'translate(-50%, -50%)',
-                        zIndex: 2,
-                      }}
-                    >
-                      <OnboardingHoverCard 
-  open={shouldShowOnboarding && index === 0 && onboardingStep === 3}
-          onOpenChange={() => {}}
-        >
-          <OnboardingHoverCardTrigger asChild>
-            <div>
-              <PulseDot 
-                color="#8B5CF6"
-                size={16}
-                pulseSize={isHovered ? 0 : 24}
-                style={{
-                  transform: isHovered ? 'scale(1.1)' : 'scale(1)',
-                  transition: 'transform 300ms',
-                }}
-              />
-            </div>
+{positions.map((pos, index) => {
+  const isHovered = hoveredAnnotationIndex === index;
+  return (
+    <React.Fragment key={index}>
+      <div
+        className="absolute"
+        style={{
+          left: `${clamp(pos?.left || 0, 0, 100)}%`,
+          top: `${clamp(pos?.top || 0, 0, 100)}%`,
+          transform: 'translate(-50%, -50%)',
+          zIndex: 2,
+        }}
+      >
+        {shouldShowOnboarding && index === 0 && onboardingStep === 3 ? (
+          <OnboardingHoverCard
+            open={true}
+            onOpenChange={() => {}}
+          >
+            <OnboardingHoverCardTrigger asChild>
+              <div>
+                <PulseDot 
+                  color="#8B5CF6"
+                  size={16}
+                  pulseSize={isHovered ? 0 : 24}
+                  style={{
+                    transform: isHovered ? 'scale(1.1)' : 'scale(1)',
+                    transition: 'transform 300ms',
+                  }}
+                />
+              </div>
             </OnboardingHoverCardTrigger>
-          {index === 0 && ( // Only show onboarding content for first dot
-            <OnboardingHoverCardContent side="top" align="center">
+            <OnboardingHoverCardContent>
               <div className="max-w-xs text-center">
                 <p className="font-medium text-[13px]">
                   Our AI model will process your image
@@ -242,63 +240,56 @@ export const MainImageDisplay: React.FC<MainImageDisplayProps> = ({
                 </div>
               </div>
             </OnboardingHoverCardContent>
-          )}
-        </OnboardingHoverCard>
-                      <HoverCard
-                        open={isHovered}
-                        openDelay={0}
-                        closeDelay={0}
-                        onOpenChange={(open) => {
-                          if (open) {
-                            onAnnotationHover?.(pos?.productId || '');
-                            setHoveredAnnotationIndex(index);
-                          } else {
-                            onAnnotationHover?.(null);
-                            setHoveredAnnotationIndex(null);
-                          }
-                        }}
-                      >
-                        <HoverCardTrigger asChild>
-                          <div>
-                            <PulseDot 
-                              color="#8B5CF6"
-                              size={16}
-                              pulseSize={isHovered ? 0 : 24}
-                              style={{
-                                transform: isHovered ? 'scale(1.1)' : 'scale(1)',
-                                transition: 'transform 300ms',
-                              }}
-                            />
-                          </div>
-                        </HoverCardTrigger>
-                        <HoverCardContent className="w-80">
-        <div className="flex justify-between space-x-4">
-          {/* 
-        <Avatar>
-            <AvatarImage src="https://github.com/vercel.png" />
-            <AvatarFallback>VC</AvatarFallback>
-          </Avatar>
-          */}
-          <div className="space-y-1">
-            <h4 className="text-sm font-semibold">
-              {`${pos?.modificationText.charAt(0).toUpperCase()}${pos?.modificationText.slice(1)}`}
-              </h4>
-            
-            <p className="text-sm text-gray-600">
-            <span className="font-semibold">Location:</span> {pos?.location}
-            </p>
-            
-            <div className="flex items-center pt-2">
-              <ShoppingCart className="mr-2 h-4 w-4 opacity-70" />{" "}
-              <span className="text-xs text-muted-foreground">
-              {`${pos?.productId.charAt(0).toUpperCase()}${pos?.productId.slice(1)}`}
-              </span>
-            </div>
-          </div>
-        </div>
-        </HoverCardContent>
-                      </HoverCard>
-                    </div>
+          </OnboardingHoverCard>
+        ) : (
+          <HoverCard
+            open={isHovered}
+            openDelay={0}
+            closeDelay={0}
+            onOpenChange={(open) => {
+              if (open) {
+                onAnnotationHover?.(pos?.productId || '');
+                setHoveredAnnotationIndex(index);
+              } else {
+                onAnnotationHover?.(null);
+                setHoveredAnnotationIndex(null);
+              }
+            }}
+          >
+            <HoverCardTrigger asChild>
+              <div>
+                <PulseDot 
+                  color="#8B5CF6"
+                  size={16}
+                  pulseSize={isHovered ? 0 : 24}
+                  style={{
+                    transform: isHovered ? 'scale(1.1)' : 'scale(1)',
+                    transition: 'transform 300ms',
+                  }}
+                />
+              </div>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-80">
+              <div className="flex justify-between space-x-4">
+                <div className="space-y-1">
+                  <h4 className="text-sm font-semibold">
+                    {`${pos?.modificationText.charAt(0).toUpperCase()}${pos?.modificationText.slice(1)}`}
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    <span className="font-semibold">Location:</span> {pos?.location}
+                  </p>
+                  <div className="flex items-center pt-2">
+                    <ShoppingCart className="mr-2 h-4 w-4 opacity-70" />{" "}
+                    <span className="text-xs text-muted-foreground">
+                      {`${pos?.productId.charAt(0).toUpperCase()}${pos?.productId.slice(1)}`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </HoverCardContent>
+          </HoverCard>
+        )}
+      </div>
 
                     {/* Bounding Box */}
                     {isHovered && (

@@ -26,11 +26,8 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
       openSignIn();
       return;
     }
-    // Trigger file input click only if user is signed in
-    const fileInput = document.getElementById('image-upload') as HTMLInputElement;
-    if (fileInput) {
-      fileInput.click();
-    }
+    // Use the ref instead of getElementById
+    fileInputRef.current?.click();
   };
 
   return (
@@ -48,13 +45,14 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
         }}
       >
 
-        <input
-          type="file"
-          ref={fileInputRef}
-          accept="image/*"
-          onChange={handleImageUpload}
-          className="hidden"
-        />
+<input
+  id="image-upload" 
+  type="file"
+  ref={fileInputRef}
+  accept="image/*"
+  onChange={handleImageUpload}
+  className="hidden"
+/>
 
 <OnboardingHoverCard 
   open={shouldShowOnboarding && onboardingStep === 2}

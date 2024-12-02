@@ -33,6 +33,7 @@ import {
   SelectGroup,
   SelectValue,
 } from '@/components/ui/select';
+import imageCompression from 'browser-image-compression';
 
 function NewRoom() {
   const router = useRouter();
@@ -116,6 +117,22 @@ function NewRoom() {
     }
   };
 
+  const compressImage = async (file: File): Promise<File> => {
+    const options = {
+      maxSizeMB: 0.5,
+      maxWidthOrHeight: 1600,
+      useWebWorker: true
+    };
+    
+    try {
+      const compressedBlob = await imageCompression(file, options);
+      return new File([compressedBlob], file.name, { type: file.type });
+    } catch (error) {
+      console.warn('Image compression failed, using original:', error);
+      return file;
+    }
+  };
+
   const handleUpload = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
       if (!supabaseClient) {
@@ -137,47 +154,64 @@ function NewRoom() {
         const previews = files.map((file) => URL.createObjectURL(file));
         setPreviewUrls(previews);
   
-        const formData = new FormData();
-        files.forEach((file) => {
-          formData.append('files', file);
-        });
+        // Compress all files first
+        const compressedFiles = await Promise.all(
+          files.map(file => compressImage(file))
+        );
   
-        const response = await new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
+        // Use compressed files for batching
+        const BATCH_SIZE = 2;
+        const batches = [];
+        for (let i = 0; i < compressedFiles.length; i += BATCH_SIZE) {
+          batches.push(compressedFiles.slice(i, i + BATCH_SIZE));
+        }
   
-          xhr.upload.addEventListener('progress', (event) => {
-            if (event.lengthComputable) {
-              const percentCompleted = Math.round(
-                (event.loaded * 100) / event.total
-              );
-              setUploadProgress(percentCompleted);
-            }
+        const allResults = [];
+        let totalProgress = 0;
+  
+        for (const batch of batches) {
+          const formData = new FormData();
+          batch.forEach((file) => {
+            formData.append('files', file);
           });
   
-          xhr.addEventListener('load', () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              resolve(JSON.parse(xhr.response));
-            } else {
-              reject(new Error(`HTTP error! status: ${xhr.status}`));
-            }
+          const response = await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+  
+            xhr.upload.addEventListener('progress', (event) => {
+              if (event.lengthComputable) {
+                const batchProgress = Math.round((event.loaded * 100) / event.total);
+                const overallProgress = Math.round(
+                  (totalProgress + batchProgress / batches.length)
+                );
+                setUploadProgress(overallProgress);
+              }
+            });
+  
+            xhr.addEventListener('load', () => {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                totalProgress += (100 / batches.length);
+                resolve(JSON.parse(xhr.response));
+              } else {
+                reject(new Error(`HTTP error! status: ${xhr.status}`));
+              }
+            });
+  
+            xhr.addEventListener('error', () => {
+              reject(new Error('Network error'));
+            });
+  
+            xhr.open('POST', '/api/upload');
+            xhr.send(formData);
           });
   
-          xhr.addEventListener('error', () => {
-            reject(new Error('Network error'));
-          });
-  
-          xhr.open('POST', '/api/upload');
-          xhr.send(formData);
-        });
-  
-        const result = response as any;
-  
-        if (result.error) {
-          throw result.error;
+          const result = response as any;
+          if (result.error) throw result.error;
+          allResults.push(...result.data.paths);
         }
   
         const publicUrls = await Promise.all(
-          result.data.paths.map(async (path: string) => {
+          allResults.map(async (path: string) => {
             const { data } = await supabaseClient.storage
               .from('rooms')
               .getPublicUrl(path);
@@ -187,21 +221,13 @@ function NewRoom() {
   
         setUploadedImagePaths((prev) => [...prev, ...publicUrls]);
       } catch (error: any) {
-        //  console.error('Upload error:', error);
         toast.error(`Failed to upload files: ${error.message}`);
       } finally {
         setUploading(false);
         setUploadProgress(0);
       }
     },
-    [
-      supabaseClient,
-      setUploading,
-      setUploadProgress,
-      setUploadedFiles,
-      setPreviewUrls,
-      setUploadedImagePaths,
-    ]
+    [supabaseClient]
   );
 
   const removeSelectedImage = (index: number) => {
