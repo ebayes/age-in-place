@@ -123,7 +123,7 @@ export function LoadingState({ onComplete, answers, stage }: LoadingStateProps) 
 
       if (stage === 'complete' && currentProgress >= 100) {
         clearInterval(progressInterval);
-        setTimeout(onComplete, 1000);
+        setTimeout(onComplete, 300);
       }
     }, 100);
 
