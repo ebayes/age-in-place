@@ -4,7 +4,7 @@ import { clerkClient, currentUser } from '@clerk/nextjs';
 import { z } from 'zod';
 import { OnboardingAnswers } from '@/types/report';
 
-export const maxDuration = 120;
+export const maxDuration = 60;
 export const runtime = 'nodejs';
 
 const REPORT_SECTIONS = [
