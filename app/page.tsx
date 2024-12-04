@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from '@/components/ui/button'
-import { Umbrella } from 'lucide-react'
+// import { Umbrella } from 'lucide-react'
 import React from 'react'
 import Link from 'next/link'
 import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
@@ -9,6 +9,7 @@ import AnimatedGradientText from "@/components/ui/animated-gradient-text";
 import { ChevronRight } from '@/components/icons'
 import { cn } from '@/lib/utils'
 import HeroVideoDialog from "@/components/ui/hero-video-dialog";
+import Image from 'next/image'
 
 function Page() {
 
@@ -20,7 +21,8 @@ function Page() {
           <div className='flex flex-row w-full justify-between'>
             <div className='flex flex-row gap-[15px] items-center'>
               <p className='text-white text-[21px]'>ageinplace.io</p>
-              <Umbrella className='w-[24px] h-[24px] text-white' />
+              {/* <Umbrella className='w-[24px] h-[24px] text-white' />*/}
+              <Image src="/logo_white.svg" alt="ageinplace.io logo" width={24} height={24} />
               <p className='text-white text-[14px] font-medium'>A smarter approach to aging in place</p>
             </div>
             <div className='flex flex-row gap-[15px] items-center'>

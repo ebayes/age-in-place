@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { SignInButton, SignedIn, SignedOut, UserButton, useUser, useClerk } from '@clerk/nextjs'
-import { Umbrella, Zap } from 'lucide-react'
+import { Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import { AddFreeCredits } from '@/lib/actions'
 import SubscriptionDialog from '@/components/subscription-dialog'
@@ -18,6 +18,7 @@ import {
   HoverCardContent as OnboardingHoverCardContent,
   HoverCardTrigger as OnboardingHoverCardTrigger,
 } from "@/components/ui/onboarding-hover";
+import Image from 'next/image'
 
 export default function Header() {
   const { isLoaded, isSignedIn, user } = useUser()
@@ -95,9 +96,7 @@ export default function Header() {
     <header className="h-[52px] flex justify-between items-center border-b bg-background">
       <div className="w-[52px] h-[52px] flex items-center justify-center border-r">
         <Link href='/'>
-          <Umbrella
-            className="w-[24px] h-[24px] text-gray-700 cursor-pointer"
-          />
+        <Image src="/logo.svg" alt="ageinplace.io logo" width={24} height={24} />
         </Link>
       </div>        
       <div className="flex items-center gap-[15px] px-[18px] flex-1">
