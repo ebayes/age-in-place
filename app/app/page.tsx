@@ -27,18 +27,13 @@ export default async function Page() {
     .order('id');
 
   if (error) {
-    //  console.error('Error fetching rooms:', error);
-    // Handle error appropriately; for now, redirect to demo room
     redirect('/app/0');
     return;
   }
 
   if (rooms && rooms.length > 0) {
-    // Redirect to the first room
     redirect(`/app/${rooms[0].id}`);
   } else {
-    // User has no rooms; redirect to an empty state page or render a component
     redirect('/app/new');
-    // Alternatively, you can render a component here to display the empty state
   }
 }

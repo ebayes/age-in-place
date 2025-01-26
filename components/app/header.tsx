@@ -88,8 +88,8 @@ export default function Header() {
       return
     }
 
-    toast.success('3 credits added successfully.')
-    // session?.reload()
+    toast.success('2 credits added successfully.')
+    session?.reload();
   }
 
   return (
@@ -173,7 +173,7 @@ export default function Header() {
             className='border-emerald-500'
             onClick={handleClick}
           >
-            Redeem 3 Free Credits
+            Redeem 2 Free Credits
           </Button>
         )}
         {isSignedIn ? (

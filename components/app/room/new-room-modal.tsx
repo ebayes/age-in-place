@@ -83,12 +83,34 @@ function NewRoom() {
   }, [supabaseClient, selectedRoomName]);
 
   useEffect(() => {
-    if (!user || !session || !supabaseClient) return;
+    console.log('Auth state:', {
+      isUserLoaded: isLoaded,
+      isSignedIn: isSignedIn,
+      hasUser: !!user,
+      hasSession: !!session,
+      sessionDetails: session ? {
+        accessToken: !!session.accessToken,
+        expires: session.expires,
+      } : null
+    });
+
+    console.log('Supabase Config:', {
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    });
   
+    if (!user || !session || !supabaseClient) {
+      console.log('Missing dependencies:', {
+        hasUser: !!user,
+        hasSession: !!session,
+        hasSupabaseClient: !!supabaseClient
+      });
+      return;
+    }  
     async function loadAvailableRooms() {
       try {
         if (!supabaseClient) {
-          //  console.error('Supabase client not initialized');
+          console.error('Supabase client not initialized');
           return;
         }
   
@@ -99,6 +121,9 @@ function NewRoom() {
         if (error) throw error;
   
         setAvailableRooms(
+          data?.map((room) => ({ id: room.id, name: room.room_name })) || []
+        );
+        console.log('Available rooms set:', // Add this log
           data?.map((room) => ({ id: room.id, name: room.room_name })) || []
         );
       } catch (error) {
@@ -429,32 +454,31 @@ const resetStates = () => {
       <DialogHeader>
         <DialogTitle>Create a new room</DialogTitle>
       </DialogHeader>
-      <DialogDescription>
         <div className="space-y-4">
           {/* Replace the nested Popover with a single one */}
           <Select
-  value={selectedRoomName}
-  onValueChange={(value) => setSelectedRoomName(value)}
->
-  <SelectTrigger className="w-full">
-    <SelectValue placeholder="Select room type..." />
-  </SelectTrigger>
-  <SelectContent>
-    <SelectGroup>
-      {availableRooms.map((room) => {
-        const Icon = getIcon(room.name);
-        return (
-          <SelectItem key={room.id} value={room.name}>
-            <div className="flex items-center gap-2">
-              <Icon size={16} />
-              {formatRoomName(room.name)}
-            </div>
-          </SelectItem>
-        );
-      })}
-    </SelectGroup>
-  </SelectContent>
-</Select>
+              value={selectedRoomName}
+              onValueChange={(value) => setSelectedRoomName(value)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select room type..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {availableRooms.map((room) => {
+                    const Icon = getIcon(room.name);
+                    return (
+                      <SelectItem key={room.id} value={room.name}>
+                        <div className="flex items-center gap-2">
+                          <Icon size={16} />
+                          {formatRoomName(room.name)}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
 
                 <div>
                   <label
@@ -576,7 +600,6 @@ const resetStates = () => {
                 </Button>
                 </div>
               </div>
-            </DialogDescription>
           </DialogContent>
         </Dialog>
       )}

@@ -17,24 +17,24 @@ const stripePromise = loadStripe(
 
 const tiers = [
   {
-    name: '10 Credits',
+    name: '2 Credits',
     id: 'tier-basic',
     price: { amount: '$5' },
-    description: 'Perfect for occasional use',
-    features: ['10 credits', 'Ask me anything', 'Never expires'],
+    description: 'Perfect for one-off use',
+    features: ['2 credits', 'Access all features'],
     mostPopular: false,
-    priceId: 'price_1QMGCzG75DShZaPO1qdkTeDO',
+    priceId: 'price_1QlZefF48pxgOJqAdj1GS16q',
     isSubscription: false
   },
   {
 
     name: 'Unlimited Credits',
     id: 'tier-unlimited',
-    price: { amount: '$29' },
+    price: { amount: '$99' },
     description: 'Best for regular users',
-    features: ['Unlimited credits', 'Ask me anything', 'Priority support'],
+    features: ['Unlimited credits', 'full home assessment report', 'Priority support'],
     mostPopular: true,
-    priceId: 'price_1QMGCWG75DShZaPOyTO9DRqM',
+    priceId: 'price_1QlZcQF48pxgOJqAMsMkP9Hj',
     isSubscription: true
   }
 ]

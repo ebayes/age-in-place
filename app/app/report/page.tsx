@@ -16,6 +16,7 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { ArrowHover } from '@/components/ui/arrow-hover';
 import { toBase64, shimmer } from '@/utils/shimmer';
 import { dummyAnnotations, dummyImages, dummyProducts, dummyReport } from '@/data/dummy';
+import SubscriptionDialog from '@/components/subscription-dialog'; 
 
 type AssessmentData = {
   room_name: string;
@@ -28,6 +29,24 @@ function Page() {
   const { user, isLoaded: isUserLoaded } = useUser();
   const { isLoaded: isSessionLoaded } = useSession();
   const client = useSupabaseClient();
+
+  const [subscriptionDialogOpen, setSubscriptionDialogOpen] = useState(false);
+  const paidUser = !!user?.publicMetadata?.stripeCustomerId;
+
+  useEffect(() => {
+    if (isUserLoaded && !paidUser) {
+      setSubscriptionDialogOpen(true);
+    }
+  }, [isUserLoaded, paidUser]);
+
+  if (!paidUser) {
+    return (
+      <SubscriptionDialog
+        open={subscriptionDialogOpen}
+        onOpenChange={setSubscriptionDialogOpen}
+      />
+    );
+  }
 
   const [report, setReport] = useState<ReportRecord | null>(null);
   const [assessmentsByRoom, setAssessmentsByRoom] = useState<AssessmentData[]>([]);

@@ -16,7 +16,7 @@ export async function AddFreeCredits() {
 
   await clerkClient.users.updateUserMetadata(user.id, {
     publicMetadata: {
-      credits: 3
+      credits: 2
     }
   })
 
@@ -80,7 +80,7 @@ export async function retrieveStripeCheckoutSession(sessionId: string) {
   await clerkClient.users.updateUserMetadata(user.id, {
     publicMetadata: {
       // Set credits based on the purchase type
-      credits: isSubscription ? 'unlimited' : 10, // 'unlimited' for subscription, 10 for one-time
+      credits: isSubscription ? 'unlimited' : 2, // 'unlimited' for subscription, 2 for one-time
       checkoutSessionIds: [...previousCheckoutSessionIds, sessionId],
       stripeCustomerId: session.customer,
       // Only include subscription data if it's a subscription
