@@ -21,7 +21,7 @@ const tiers = [
     id: 'tier-basic',
     price: { amount: '$5' },
     description: 'Perfect for one-off use',
-    features: ['2 credits', 'Access all features'],
+    features: ['2 credits', 'Access all image analysis features'],
     mostPopular: false,
     priceId: 'price_1QlZefF48pxgOJqAdj1GS16q',
     isSubscription: false
@@ -32,7 +32,7 @@ const tiers = [
     id: 'tier-unlimited',
     price: { amount: '$99' },
     description: 'Best for regular users',
-    features: ['Unlimited credits', 'full home assessment report', 'Priority support'],
+    features: ['Unlimited credits', 'Full home assessment report', 'Priority support'],
     mostPopular: true,
     priceId: 'price_1QlZcQF48pxgOJqAMsMkP9Hj',
     isSubscription: true
@@ -115,7 +115,7 @@ export default function SubscriptionDialog(
                   </span>
                   {tier.isSubscription && (
                     <span className='text-sm font-semibold leading-6 text-gray-600'>
-                      /month
+                      /year
                     </span>
                   )}
                 </p>
