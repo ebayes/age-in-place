@@ -44,7 +44,7 @@ function Page() {
               From photo to personalized recommendations in seconds. Create a safer home today.
             </p>
           </div>
-          <div className='flex flex-row items-start justify-start'>
+          <div className='flex flex-col items-start justify-start gap-2'>
             <Link href="/app">
               <AnimatedGradientText className="text-lg"> 
                 <SignedIn>
@@ -68,7 +68,16 @@ function Page() {
                 <ChevronRight size="sm" className="ml-1 size-4 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5" />
               </AnimatedGradientText>
             </Link>
+            <div className='flex flex-row gap-3'>
+            <Link href="/terms">
+              <p className='text-white text-[14px] hover:underline'>Terms of use</p>
+            </Link>
+            <Link href="/privacy">
+              <p className='text-white text-[14px] hover:underline'>Privacy policy</p>
+            </Link>
+            </div>
           </div>
+          
         </div>
         <div className='flex flex-row w-full justify-between items-end'>
           <div className='flex flex-col w-[601px] text-white'>
