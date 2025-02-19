@@ -1,4 +1,5 @@
 We understand that you are aware of and care about your own personal privacy, and we wrote this policy to help you understand what information we collect through our Website. Terms used but not defined herein have the meanings assigned to them in our Website Terms of Use.
+
 # Introduction
 
 This policy describes the types of information we may collect from you or that you may provide when you visit the Website and our practices for collecting, using, maintaining, protecting, and disclosing that information.
