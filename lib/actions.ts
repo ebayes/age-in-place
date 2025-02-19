@@ -41,7 +41,8 @@ export async function createStripeCheckoutSession(
     line_items: lineItems,
     success_url: `${origin}/checkout?sessionId={CHECKOUT_SESSION_ID}`,
     cancel_url: origin,
-    customer_email: user.emailAddresses[0].emailAddress
+    customer_email: user.emailAddresses[0].emailAddress,
+    allow_promotion_codes: true
   })
 
   return { sessionId: session.id, checkoutError: null }
