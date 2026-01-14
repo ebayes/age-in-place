@@ -48,7 +48,7 @@
     "jspdf": "^2.5.2",
     "lucide-react": "^0.309.0",
     "motion": "^11.11.17",
-    "next": "^15.0.3",
+    "next": "15.0.7",
     "next-themes": "^0.2.1",
     "openai": "^4.24.3",
     "prisma": "^5.10.2",
@@ -80,5 +80,6 @@
     "prettier-plugin-tailwindcss": "^0.5.11",
     "tailwindcss": "^3.3.0",
     "typescript": "^5"
-  }
+  },
+  "packageManager": "pnpm@10.28.0+sha512.05df71d1421f21399e053fde567cea34d446fa02c76571441bfc1c7956e98e363088982d940465fd34480d4d90a0668bc12362f8aa88000a64e83d0b0e47be48"
 }
