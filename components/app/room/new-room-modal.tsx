@@ -365,7 +365,19 @@ function NewRoom() {
         });
 
         if (!dinoResponse.ok) {
-          throw new Error('Error from dino API');
+          let dinoError = `DINO API returned status ${dinoResponse.status}`;
+          try {
+            const errorPayload = await dinoResponse.json();
+            if (errorPayload?.error) {
+              dinoError = `DINO API error: ${errorPayload.error}`;
+            }
+          } catch {
+            const errorText = await dinoResponse.text();
+            if (errorText) {
+              dinoError = `DINO API error: ${errorText}`;
+            }
+          }
+          throw new Error(dinoError);
         }
 
         const dinoData = await dinoResponse.json();

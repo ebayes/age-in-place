@@ -24,6 +24,7 @@ const DELAY_BTW_RETRIES = 1000; // in milliseconds
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
+  let imageTempPath: string | null = null;
   try {
     // Parse the form data
     const formData = await req.formData();
@@ -34,11 +35,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Prompt and image are required.' }, { status: 400 });
     }
 
+    const mimeType = imageFile.type || 'image/jpeg';
+    if (!mimeType.startsWith('image/')) {
+      return NextResponse.json({ error: `Unsupported file type: ${mimeType}` }, { status: 400 });
+    }
+
     // Save the uploaded image to a temporary file
-    const imageTempPath = await saveFileToTemp(imageFile);
+    imageTempPath = await saveFileToTemp(imageFile);
 
     // Upload the image to NVIDIA API
-    const asset_id = await uploadAsset(imageTempPath, 'Input Image');
+    const asset_id = await uploadAsset(imageTempPath, 'Input Image', mimeType);
 
     // Prepare the inputs for NVIDIA API
     const inputs = {
@@ -51,7 +57,7 @@ export async function POST(req: NextRequest) {
             {
               type: 'media_url',
               media_url: {
-                url: `data:image/jpeg;asset_id,${asset_id}`,
+                url: `data:${mimeType};asset_id,${asset_id}`,
               },
             },
           ],
@@ -96,13 +102,6 @@ export async function POST(req: NextRequest) {
     }
 
     if (jsonData) {
-      // Clean up temporary files
-      const tempDir = path.dirname(imageTempPath);
-    
-      if (fs.existsSync(tempDir)) {
-        fs.rmSync(tempDir, { recursive: true, force: true });
-      }
-    
       return NextResponse.json({
         jsonData,
       });
@@ -112,6 +111,14 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     // console.error('Error in API handler:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
+  } finally {
+    // Always clean up uploaded temp image directory.
+    if (imageTempPath) {
+      const tempDir = path.dirname(imageTempPath);
+      if (fs.existsSync(tempDir)) {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
+    }
   }
 }
 
@@ -127,7 +134,7 @@ async function saveFileToTemp(file: File): Promise<string> {
   return filePath;
 }
 
-async function uploadAsset(filePath: string, description: string): Promise<string> {
+async function uploadAsset(filePath: string, description: string, mimeType: string): Promise<string> {
   const assets_url = 'https://api.nvcf.nvidia.com/v2/nvcf/assets';
 
   const headers = {
@@ -138,10 +145,10 @@ async function uploadAsset(filePath: string, description: string): Promise<strin
 
   const s3_headers = {
     'x-amz-meta-nvcf-asset-description': description,
-    'content-type': 'image/jpeg',
+    'content-type': mimeType,
   };
 
-  const payload = { contentType: 'image/jpeg', description };
+  const payload = { contentType: mimeType, description };
 
   const response = await fetch(assets_url, {
     method: 'POST',
@@ -176,6 +183,13 @@ async function uploadAsset(filePath: string, description: string): Promise<strin
 }
 
 async function handleResponse(response: Response): Promise<{ jsonData: any; }> {
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    const payload = await response.json();
+    const parsedJsonData = extractDinoData(payload);
+    return { jsonData: parsedJsonData };
+  }
+
   const arrayBuffer = await response.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
 
@@ -202,32 +216,15 @@ async function handleResponse(response: Response): Promise<{ jsonData: any; }> {
 
   const jsonFilePath = path.join(outputDir, jsonFile);
   const jsonContent = fs.readFileSync(jsonFilePath, 'utf-8');
-  const jsonData = JSON.parse(jsonContent);
+  const payload = JSON.parse(jsonContent);
+  const parsedJsonData = extractDinoData(payload);
 
-  // Extract data from jsonData
-  const choice = jsonData.choices?.[0];
-  const messageContent = choice?.message?.content;
-
-  if (messageContent) {
-    const frameWidth = messageContent.frameWidth || 0;
-    const frameHeight = messageContent.frameHeight || 0;
-    const boundingBoxes = messageContent.boundingBoxes || [];
-
-    // Clean up temporary files
-    if (fs.existsSync(outputDir)) {
-      fs.rmSync(outputDir, { recursive: true, force: true });
-    }
-
-    return {
-      jsonData: {
-        frameWidth,
-        frameHeight,
-        boundingBoxes,
-      },
-    };
-  } else {
-    throw new Error('Unable to extract bounding boxes and frame dimensions from the response.');
+  // Clean up temporary files
+  if (fs.existsSync(outputDir)) {
+    fs.rmSync(outputDir, { recursive: true, force: true });
   }
+
+  return { jsonData: parsedJsonData };
 }
 
 async function pollForResult(nvcf_reqid: string): Promise<{ jsonData: any; }> {
@@ -258,4 +255,58 @@ async function pollForResult(nvcf_reqid: string): Promise<{ jsonData: any; }> {
   }
 
   throw new Error('Max retries reached. Evaluation not completed.');
+}
+
+function extractDinoData(payload: any): { frameWidth: number; frameHeight: number; boundingBoxes: any[] } {
+  const candidates: any[] = [];
+
+  if (payload && typeof payload === 'object') {
+    candidates.push(payload);
+
+    const content = payload.choices?.[0]?.message?.content;
+    if (typeof content === 'string') {
+      try {
+        candidates.push(JSON.parse(content));
+      } catch {
+        // Ignore invalid JSON in content string.
+      }
+    } else if (Array.isArray(content)) {
+      for (const item of content) {
+        if (item?.type === 'text' && typeof item?.text === 'string') {
+          try {
+            candidates.push(JSON.parse(item.text));
+          } catch {
+            // Ignore invalid JSON in text item.
+          }
+        } else if (item && typeof item === 'object') {
+          candidates.push(item);
+        }
+      }
+    } else if (content && typeof content === 'object') {
+      candidates.push(content);
+    }
+  }
+
+  const getBoxes = (obj: any) =>
+    Array.isArray(obj?.boundingBoxes)
+      ? obj.boundingBoxes
+      : Array.isArray(obj?.boxes)
+        ? obj.boxes
+        : null;
+
+  const getWidth = (obj: any) => obj?.frameWidth ?? obj?.frame_width;
+  const getHeight = (obj: any) => obj?.frameHeight ?? obj?.frame_height;
+
+  for (const candidate of candidates) {
+    const boxes = getBoxes(candidate);
+    if (boxes) {
+      return {
+        frameWidth: Number(getWidth(candidate) ?? 0),
+        frameHeight: Number(getHeight(candidate) ?? 0),
+        boundingBoxes: boxes,
+      };
+    }
+  }
+
+  throw new Error('Unable to extract bounding boxes and frame dimensions from DINO response.');
 }
