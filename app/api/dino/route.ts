@@ -16,6 +16,7 @@ if (!NVIDIA_API_KEY) {
 const nvai_url = 'https://ai.api.nvidia.com/v1/cv/nvidia/nv-grounding-dino';
 const nvai_polling_url = 'https://api.nvcf.nvidia.com/v2/nvcf/pexec/status/';
 const header_auth = `Bearer ${NVIDIA_API_KEY}`;
+const SUPPORTED_DINO_MIME_TYPES = new Set(['image/jpeg', 'image/png']);
 
 // Constants for polling
 const MAX_RETRIES = 5;
@@ -38,6 +39,12 @@ export async function POST(req: NextRequest) {
     const mimeType = imageFile.type || 'image/jpeg';
     if (!mimeType.startsWith('image/')) {
       return NextResponse.json({ error: `Unsupported file type: ${mimeType}` }, { status: 400 });
+    }
+    if (!SUPPORTED_DINO_MIME_TYPES.has(mimeType)) {
+      return NextResponse.json(
+        { error: `Unsupported image type "${mimeType}". Please upload JPG or PNG.` },
+        { status: 400 }
+      );
     }
 
     // Save the uploaded image to a temporary file

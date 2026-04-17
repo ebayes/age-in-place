@@ -35,6 +35,8 @@ import {
 } from '@/components/ui/select';
 import imageCompression from 'browser-image-compression';
 
+const ALLOWED_ROOM_IMAGE_TYPES = new Set(['image/jpeg', 'image/png']);
+
 function NewRoom() {
   const router = useRouter();
   const { user, isLoaded, isSignedIn } = useUser();
@@ -174,6 +176,13 @@ function NewRoom() {
         }
   
         const files = Array.from(event.target.files);
+        const invalidFiles = files.filter((file) => !ALLOWED_ROOM_IMAGE_TYPES.has(file.type));
+        if (invalidFiles.length > 0) {
+          const invalidNames = invalidFiles.map((file) => file.name).join(', ');
+          throw new Error(
+            `Unsupported file type. Please upload JPG or PNG images only. Invalid file(s): ${invalidNames}`
+          );
+        }
         setUploadedFiles((prev) => [...prev, ...files]);
   
         const previews = files.map((file) => URL.createObjectURL(file));
@@ -277,8 +286,8 @@ function NewRoom() {
       }
 
       const files = Array.from(event.dataTransfer.files);
-      if (!files.every((file) => file.type.startsWith('image/'))) {
-        alert('Please upload image files only');
+      if (!files.every((file) => ALLOWED_ROOM_IMAGE_TYPES.has(file.type))) {
+        alert('Please upload JPG or PNG files only');
         return;
       }
 
