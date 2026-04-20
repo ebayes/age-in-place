@@ -326,6 +326,23 @@ function NewRoom() {
   
     try {
       const annotationsArray = [];
+      let hadDinoFailure = false;
+      const dinoErrors: string[] = [];
+
+      const getImageDimensions = (file: File): Promise<{ width: number; height: number }> =>
+        new Promise((resolve) => {
+          const imageUrl = URL.createObjectURL(file);
+          const img = new window.Image();
+          img.onload = () => {
+            resolve({ width: img.naturalWidth || 0, height: img.naturalHeight || 0 });
+            URL.revokeObjectURL(imageUrl);
+          };
+          img.onerror = () => {
+            resolve({ width: 0, height: 0 });
+            URL.revokeObjectURL(imageUrl);
+          };
+          img.src = imageUrl;
+        });
 
       for (let i = 0; i < uploadedFiles.length; i++) {
         const file = uploadedFiles[i];
@@ -368,35 +385,55 @@ function NewRoom() {
         formData.append('image', file);
         formData.append('prompt', partDescriptions);
 
-        const dinoResponse = await fetch('/api/dino', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!dinoResponse.ok) {
-          let dinoError = `DINO API returned status ${dinoResponse.status}`;
-          try {
-            const errorPayload = await dinoResponse.json();
-            if (errorPayload?.error) {
-              dinoError = `DINO API error: ${errorPayload.error}`;
-            }
-          } catch {
-            const errorText = await dinoResponse.text();
-            if (errorText) {
-              dinoError = `DINO API error: ${errorText}`;
-            }
-          }
-          throw new Error(dinoError);
-        }
-
-        const dinoData = await dinoResponse.json();
-
-        const annotation = {
-          boundingBoxes: dinoData.jsonData?.boundingBoxes || [],
+        let annotation = {
+          boundingBoxes: [] as any[],
           modifications: modifications,
-          frameWidth: dinoData.jsonData?.frameWidth || 0,
-          frameHeight: dinoData.jsonData?.frameHeight || 0,
+          frameWidth: 0,
+          frameHeight: 0,
         };
+
+        try {
+          const dinoResponse = await fetch('/api/dino', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!dinoResponse.ok) {
+            let dinoError = `DINO API returned status ${dinoResponse.status}`;
+            try {
+              const errorPayload = await dinoResponse.json();
+              if (errorPayload?.error) {
+                dinoError = `DINO API error: ${errorPayload.error}`;
+              }
+            } catch {
+              const errorText = await dinoResponse.text();
+              if (errorText) {
+                dinoError = `DINO API error: ${errorText}`;
+              }
+            }
+            throw new Error(dinoError);
+          }
+
+          const dinoData = await dinoResponse.json();
+          annotation = {
+            boundingBoxes: dinoData.jsonData?.boundingBoxes || [],
+            modifications: modifications,
+            frameWidth: dinoData.jsonData?.frameWidth || 0,
+            frameHeight: dinoData.jsonData?.frameHeight || 0,
+          };
+        } catch (dinoError: any) {
+          hadDinoFailure = true;
+          if (dinoError?.message) {
+            dinoErrors.push(dinoError.message);
+          }
+          const fallbackDimensions = await getImageDimensions(file);
+          annotation = {
+            boundingBoxes: [],
+            modifications: modifications,
+            frameWidth: fallbackDimensions.width,
+            frameHeight: fallbackDimensions.height,
+          };
+        }
 
         annotationsArray.push(annotation);
       }
@@ -419,6 +456,12 @@ function NewRoom() {
     }
 
     if (data && data.length > 0) {
+      if (hadDinoFailure) {
+        const firstError = dinoErrors[0] ? ` (${dinoErrors[0]})` : '';
+        toast.warning(
+          `Room created, but object detection is temporarily unavailable for some images${firstError}`
+        );
+      }
       router.push(`/app/${data[0].id}`);
     }
 
