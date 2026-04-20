@@ -5,6 +5,8 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_DETECTION_MODEL || 'gemini-2.5-flash';
 const SUPPORTED_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png']);
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+const MAX_GEMINI_RETRIES = 3;
+const INITIAL_RETRY_DELAY_MS = 1200;
 
 export const runtime = 'nodejs';
 
@@ -42,13 +44,10 @@ export async function POST(req: NextRequest) {
     const imageBase64 = imageBuffer.toString('base64');
     const { width, height } = getImageDimensions(imageBuffer, mimeType);
 
-    const geminiResponse = await fetch(`${GEMINI_ENDPOINT}?key=${encodeURIComponent(GEMINI_API_KEY)}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(buildGeminiRequestBody(phrases, mimeType, imageBase64)),
-    });
+    const geminiResponse = await fetchGeminiWithRetry(
+      `${GEMINI_ENDPOINT}?key=${encodeURIComponent(GEMINI_API_KEY)}`,
+      buildGeminiRequestBody(phrases, mimeType, imageBase64)
+    );
 
     if (!geminiResponse.ok) {
       const errorText = await geminiResponse.text();
@@ -76,6 +75,54 @@ function parsePromptPhrases(prompt: string): string[] {
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+async function fetchGeminiWithRetry(url: string, body: Record<string, any>): Promise<Response> {
+  let delayMs = INITIAL_RETRY_DELAY_MS;
+  let lastResponse: Response | null = null;
+  let lastError: unknown = null;
+
+  for (let attempt = 0; attempt <= MAX_GEMINI_RETRIES; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!shouldRetryGeminiResponse(response.status) || attempt === MAX_GEMINI_RETRIES) {
+        return response;
+      }
+
+      lastResponse = response;
+    } catch (error) {
+      lastError = error;
+      if (attempt === MAX_GEMINI_RETRIES) {
+        throw error;
+      }
+    }
+
+    await sleep(delayMs);
+    delayMs *= 2;
+  }
+
+  if (lastResponse) {
+    return lastResponse;
+  }
+
+  throw new Error(
+    `Failed to call Gemini detection after retries.${lastError ? ` ${String(lastError)}` : ''}`
+  );
+}
+
+function shouldRetryGeminiResponse(status: number): boolean {
+  return status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function buildGeminiRequestBody(phrases: string[], mimeType: string, imageBase64: string) {
