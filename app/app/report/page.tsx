@@ -53,6 +53,20 @@ function Page() {
   const [productsByRoom, setProductsByRoom] = useState<{ [roomName: string]: Product[] }>({});
   const [loading, setLoading] = useState(true);
 
+  const toAnchorId = (value: string) =>
+    value
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-');
+
+  const scrollToSection = (id: string) => {
+    const target = document.getElementById(id);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   useEffect(() => {
     async function fetchData() {
       if (!isUserLoaded || !isSessionLoaded) return;
@@ -205,7 +219,13 @@ function Page() {
                   >
                     <ArrowDown size="md" />
                   </Button>
-                  <a href={`#section-${index}`}>{section.title}</a>
+                  <button
+                    type="button"
+                    onClick={() => scrollToSection(`section-${toAnchorId(section.title)}`)}
+                    className="text-left hover:underline"
+                  >
+                    {section.title}
+                  </button>
                 </div>
                 {index < report.report_lines.length - 1 && (
                   <Separator className="group-hover:opacity-0" />
@@ -223,9 +243,13 @@ function Page() {
                   >
                     <ArrowDown size="md" />
                   </Button>
-                  <a href={`#room-${assessment.room_name}`}>
+                  <button
+                    type="button"
+                    onClick={() => scrollToSection(`room-${toAnchorId(assessment.room_name)}`)}
+                    className="text-left hover:underline"
+                  >
                     {assessment.room_name.charAt(0).toUpperCase() + assessment.room_name.slice(1)}
-                  </a>
+                  </button>
                 </div>
                 {index < assessmentsByRoom.length - 1 && (
                   <Separator className="group-hover:opacity-0" />
@@ -239,7 +263,7 @@ function Page() {
             {report.report_lines.map((section, index) => (
               <div
                 key={index}
-                id={`section-${index}`}
+                id={`section-${toAnchorId(section.title)}`}
                 className="flex w-full gap-[32px] mb-[68px] pt-[32px] border-t"
               >
                 <div className="w-[232px]">
@@ -261,7 +285,7 @@ function Page() {
             {assessmentsByRoom.map((assessment, index) => (
               <div
                 key={index}
-                id={`room-${assessment.room_name}`}
+                id={`room-${toAnchorId(assessment.room_name)}`}
                 className="flex w-full gap-[32px] mb-[68px] pt-[32px] border-t"
               >
                 <div className="w-[232px]">
